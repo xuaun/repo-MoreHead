@@ -265,6 +265,18 @@ namespace MoreHead
                             .Where(decoration => LIMB_TAGS.Contains(decoration.ParentTag?.ToUpper()))
                             .ToList();
                     }
+                    else if (tag == "FAV")
+                    {
+                        filteredDecorations = HeadDecorationManager.Decorations
+                            .Where(decoration => FavoritesManager.IsFavorite(decoration.DisplayName ?? string.Empty))
+                            .ToList();
+                    }
+                    else if (tag == "HIDE")
+                    {
+                        filteredDecorations = HeadDecorationManager.Decorations
+                            .Where(decoration => FavoritesManager.IsHidden(decoration.DisplayName ?? string.Empty))
+                            .ToList();
+                    }
                     else
                     {
                         filteredDecorations = HeadDecorationManager.Decorations
@@ -1915,9 +1927,18 @@ namespace MoreHead
                 isSearching = true;
                 searchResults.Clear();
 
-                var allDecorations = HeadDecorationManager.Decorations;
+                List<DecorationInfo> decorationsToSearch;
 
-                searchResults = allDecorations.Where(d =>
+                if (decorationDataCache.TryGetValue(currentTagFilter, out var tagDecorations))
+                {
+                    decorationsToSearch = tagDecorations;
+                }
+                else
+                {
+                    decorationsToSearch = HeadDecorationManager.Decorations.ToList();
+                }
+
+                searchResults = decorationsToSearch.Where(d =>
                     (d.Name != null && d.Name.IndexOf(currentSearchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
                     (d.DisplayName != null && d.DisplayName.IndexOf(currentSearchText, StringComparison.OrdinalIgnoreCase) >= 0)
                 ).ToList();
