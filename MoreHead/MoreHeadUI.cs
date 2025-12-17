@@ -23,8 +23,8 @@ namespace MoreHead
             var sorted = decorations
                 .OrderByDescending(d => d.IsVisible)
                 .ThenByDescending(d => FavoritesManager.IsFavorite(d.DisplayName ?? ""))
-                .ThenBy(d => d.DisplayName)
                 .ThenBy(d => d.Name != d.DisplayName ? 1 : 0)
+                .ThenBy(d => d.DisplayName)
                 .ToList();
 
             return sorted;
