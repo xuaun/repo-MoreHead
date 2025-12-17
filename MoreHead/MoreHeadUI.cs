@@ -102,6 +102,12 @@ namespace MoreHead
 
         private static Dictionary<int, REPOInputField> outfitInputFields = new Dictionary<int, REPOInputField>();
 
+        // 装饰物搜索字段
+        private static REPOInputField? decorationSearchField;
+        private static string currentSearchText = "";
+        private static bool isSearching = false;
+        private static List<DecorationInfo> searchResults = new();
+
         // 初始化UI
         public static void Initialize()
         {
@@ -377,7 +383,7 @@ namespace MoreHead
                 //page.rectTransform.sizeDelta = new Vector2(300f, 350f);
                 page.pageDimmerVisibility = true;
                 page.maskPadding = new Padding(10f, 10f, 20f, 10f);
-                page.headerTMP.rectTransform.position = new Vector3(170, 344, 0);
+                page.headerTMP.rectTransform.position = new Vector3(170, 370, 0);
                 page.pageDimmerOpacity = 0.85f;
                 page.scrollView.scrollSpeed = 4f;
             }
@@ -472,6 +478,8 @@ namespace MoreHead
 
                 CreateOutfitInputFields(page);
 
+                CreateDecorationSearchField(page);
+
                 // 标签按钮的水平间距
                 const int buttonSpacing = 35; // 减小间距，使按钮靠近一点
                 // 起始X坐标
@@ -544,6 +552,11 @@ namespace MoreHead
         {
             try
             {
+                if (isSearching)
+                {
+                    ClearSearchField();
+                }
+
                 // 如果点击的是当前标签，不做任何操作
                 if (tag == currentTagFilter)
                 {
@@ -1207,6 +1220,11 @@ namespace MoreHead
                 outfitButtons.Clear();
                 outfitInputFields.Clear();
 
+                currentSearchText = "";
+                isSearching = false;
+                searchResults.Clear();
+                decorationSearchField = null;
+
                 // 销毁现有页面
                 if (decorationsPage != null && decorationsPage.gameObject != null)
                 {
@@ -1848,6 +1866,105 @@ namespace MoreHead
             catch (Exception e)
             {
                 Logger?.LogError($"更新装备方案按钮高亮状态时出错: {e.Message}");
+            }
+        }
+
+        private static void CreateDecorationSearchField(REPOPopupPage? page)
+        {
+            try
+            {
+                page?.AddElement(parent =>
+                {
+                    decorationSearchField = MenuAPI.CreateREPOInputField(
+                        "Search item:",
+                        (value) =>
+                        {
+                            OnSearchTextChanged(value ?? "");
+                        },
+                        parent,
+                        new Vector2(70, 310)
+                    );
+                });
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"✗ Erro ao criar campo de busca: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private static void OnSearchTextChanged(string searchText)
+        {
+            try
+            {
+                currentSearchText = searchText?.Trim() ?? "";
+
+                if (decorationsPage == null)
+                {
+                    Logger?.LogWarning("⚠️ Página de decorações é nula, não é possível atualizar");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(currentSearchText))
+                {
+                    isSearching = false;
+                    searchResults.Clear();
+                    ShowTagDecorations2(currentTagFilter);
+                    return;
+                }
+
+                isSearching = true;
+                searchResults.Clear();
+
+                var allDecorations = HeadDecorationManager.Decorations;
+
+                searchResults = allDecorations.Where(d =>
+                    (d.Name != null && d.Name.IndexOf(currentSearchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                    (d.DisplayName != null && d.DisplayName.IndexOf(currentSearchText, StringComparison.OrdinalIgnoreCase) >= 0)
+                ).ToList();
+
+                foreach (var button in decorationButtons.Values)
+                {
+                    button.repoScrollViewElement.visibility = false;
+                }
+
+                int visibleCount = 0;
+                foreach (var decoration in searchResults)
+                {
+                    if (decorationButtons.TryGetValue(decoration.Name ?? string.Empty, out var button))
+                    {
+                        button.repoScrollViewElement.visibility = true;
+                        visibleCount++;
+                    }
+                    else
+                    {
+                        Logger?.LogWarning($"⚠️ Botão não encontrado para: {decoration.DisplayName}");
+                    }
+                }
+
+                decorationsPage.scrollView.SetScrollPosition(0);
+                decorationsPage.scrollView.UpdateElements();
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"✗ Erro ao processar mudança de texto de busca: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private static void ClearSearchField()
+        {
+            try
+            {
+                if (decorationSearchField?.inputStringSystem != null)
+                {
+                    decorationSearchField.inputStringSystem.SetValue("", false);
+                    currentSearchText = "";
+                    isSearching = false;
+                    searchResults.Clear();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"✗ Erro ao limpar campo de busca: {e.Message}");
             }
         }
 
