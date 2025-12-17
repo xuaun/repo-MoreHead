@@ -10,18 +10,180 @@ using Newtonsoft.Json;
 
 namespace MoreHead
 {
+    public static class FavoritesManager
+    {
+        private static ManualLogSource? Logger => Morehead.Logger;
+
+        private static HashSet<string> _favorites = [];
+        private static HashSet<string> _hidden = [];
+
+        private static readonly string FavoritesFilePath = Path.Combine(BepInEx.Paths.ConfigPath, "MoreHeadFavorites.json");
+
+        public static void Initialize()
+        {
+            try
+            {
+                LoadFavorites();
+                Logger?.LogInfo($"FavoritesManager initialized: {_favorites.Count} favorites, {_hidden.Count} hidden");
+                Logger?.LogInfo($"Favorites list: [{string.Join(", ", _favorites)}]");
+                Logger?.LogInfo($"Hidden list: [{string.Join(", ", _hidden)}]");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"Error initializing FavoritesManager: {e.Message}");
+            }
+        }
+
+        public static void LoadFavorites()
+        {
+            try
+            {
+                if (!File.Exists(FavoritesFilePath))
+                {
+                    SaveFavorites();
+                    return;
+                }
+
+                string json = File.ReadAllText(FavoritesFilePath);
+                var data = JsonConvert.DeserializeObject<FavoritesData>(json);
+
+                if (data is not null)
+                {
+                    _favorites = new HashSet<string>(data.Favorites ?? []);
+                    _hidden = new HashSet<string>(data.Hidden ?? []);
+                }
+                else
+                {
+                    _favorites.Clear();
+                    _hidden.Clear();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"Error loading favorites: {e.Message}");
+                _favorites.Clear();
+                _hidden.Clear();
+            }
+        }
+
+        public static void SaveFavorites()
+        {
+            try
+            {
+                var data = new FavoritesData
+                {
+                    Favorites = _favorites.ToList(),
+                    Hidden = _hidden.ToList()
+                };
+
+                string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+                File.WriteAllText(FavoritesFilePath, json);
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"Error saving favorites: {e.Message}");
+            }
+        }
+
+        public static bool IsFavorite(string name)
+        {
+            bool result = !string.IsNullOrEmpty(name) && _favorites.Contains(name);
+            return result;
+        }
+
+        public static void ToggleFavorite(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+
+            if (_favorites.Contains(name))
+                _favorites.Remove(name);
+            else
+                _favorites.Add(name);
+
+            SaveFavorites();
+        }
+
+        public static void AddFavorite(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_favorites.Add(name))
+                SaveFavorites();
+        }
+
+        public static void RemoveFavorite(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_favorites.Remove(name))
+                SaveFavorites();
+        }
+
+        public static bool IsHidden(string name)
+        {
+            bool result = !string.IsNullOrEmpty(name) && _hidden.Contains(name);
+            return result;
+        }
+
+        public static void ToggleHidden(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+
+            if (_hidden.Contains(name))
+                _hidden.Remove(name);
+            else
+                _hidden.Add(name);
+
+            SaveFavorites();
+        }
+
+        public static void AddHidden(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_hidden.Add(name))
+                SaveFavorites();
+        }
+
+        public static void RemoveHidden(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_hidden.Remove(name))
+                SaveFavorites();
+        }
+
+        public static List<string> GetFavorites() => _favorites.ToList();
+        public static List<string> GetHidden() => _hidden.ToList();
+
+        public static void ClearFavorites()
+        {
+            _favorites.Clear();
+            SaveFavorites();
+        }
+
+        public static void ClearHidden()
+        {
+            _hidden.Clear();
+            SaveFavorites();
+        }
+    }
+
+    [Serializable]
+    public class FavoritesData
+    {
+        public List<string> Favorites { get; set; } = [];
+        public List<string> Hidden { get; set; } = [];
+    }
+
     // 装饰物黑名单管理器
     public static class DecorationBlacklistManager
     {
         // 日志记录器
         private static ManualLogSource? Logger => Morehead.Logger;
-        
+
         // 黑名单列表，存储装饰物名称
         private static HashSet<string> _blacklistedDecorations = [];
-        
+
         // 黑名单文件路径
         private static readonly string BlacklistFilePath = Path.Combine(BepInEx.Paths.ConfigPath, "MoreHeadBlacklist.json");
-        
+
         // 初始化黑名单
         public static void Initialize()
         {
@@ -35,7 +197,7 @@ namespace MoreHead
                 Logger?.LogError($"初始化黑名单管理器时出错: {e.Message}");
             }
         }
-        
+
         // 加载黑名单
         public static void LoadBlacklist()
         {
@@ -47,13 +209,13 @@ namespace MoreHead
                     SaveBlacklist();
                     return;
                 }
-                
+
                 // 读取黑名单文件
                 string json = File.ReadAllText(BlacklistFilePath);
-                
+
                 // 反序列化JSON数据
                 var blacklistData = JsonConvert.DeserializeObject<BlacklistData>(json);
-                
+
                 // 更新黑名单集合
                 if (blacklistData is not null)
                 {
@@ -70,7 +232,7 @@ namespace MoreHead
                 _blacklistedDecorations.Clear();
             }
         }
-        
+
         // 保存黑名单
         public static void SaveBlacklist()
         {
@@ -81,13 +243,13 @@ namespace MoreHead
                 {
                     DecorationNames = _blacklistedDecorations.ToList()
                 };
-                
+
                 // 序列化为JSON
                 string json = JsonConvert.SerializeObject(blacklistData, Formatting.Indented);
-                
+
                 // 写入文件
                 File.WriteAllText(BlacklistFilePath, json);
-                
+
                 // Logger?.LogInfo($"已保存黑名单，共 {_blacklistedDecorations.Count} 项");
             }
             catch (Exception e)
@@ -95,43 +257,43 @@ namespace MoreHead
                 Logger?.LogError($"保存黑名单时出错: {e.Message}");
             }
         }
-        
+
         // 添加装饰物到黑名单
         public static void AddToBlacklist(string decorationName)
         {
             if (string.IsNullOrEmpty(decorationName)) return;
-            
+
             if (_blacklistedDecorations.Add(decorationName))
             {
                 // Logger?.LogInfo($"已将装饰物 {decorationName} 添加到黑名单");
                 SaveBlacklist();
             }
         }
-        
+
         // 从黑名单中移除装饰物
         public static void RemoveFromBlacklist(string decorationName)
         {
             if (string.IsNullOrEmpty(decorationName)) return;
-            
+
             if (_blacklistedDecorations.Remove(decorationName))
             {
                 // Logger?.LogInfo($"已将装饰物 {decorationName} 从黑名单中移除");
                 SaveBlacklist();
             }
         }
-        
+
         // 检查装饰物是否在黑名单中
         public static bool IsBlacklisted(string decorationName)
         {
             return !string.IsNullOrEmpty(decorationName) && _blacklistedDecorations.Contains(decorationName);
         }
-        
+
         // 获取所有黑名单项
         public static List<string> GetBlacklistedDecorations()
         {
             return _blacklistedDecorations.ToList();
         }
-        
+
         // 清除黑名单
         public static void ClearBlacklist()
         {
@@ -140,54 +302,54 @@ namespace MoreHead
             Logger?.LogInfo("已清空黑名单");
         }
     }
-    
+
     // 黑名单数据结构
     [Serializable]
     public class BlacklistData
     {
         public List<string> DecorationNames { get; set; } = [];
     }
-    
+
     // 装饰物信息类
     public class DecorationInfo
     {
         // 装饰物名称
         public string? Name { get; set; }
-        
+
         // 装饰物显示名称
         public string? DisplayName { get; set; }
-        
+
         // 装饰物显示状态
         public bool IsVisible { get; set; }
-        
+
         // 装饰物预制体
         public GameObject? Prefab { get; set; }
-        
+
         // 装饰物父级位置标识
         public string? ParentTag { get; set; }
-        
+
         // 装饰物AB包路径
         public string? BundlePath { get; set; }
-        
+
         // 所属模组名称
         public string? ModName { get; set; }
     }
-    
+
     // 头部装饰物管理器
     public static class HeadDecorationManager
     {
         // 日志记录器
         private static ManualLogSource? Logger => Morehead.Logger;
-        
+
         // 日志控制配置选项
         private static ConfigEntry<bool>? _enableVerboseLogging;
-        
+
         // 装饰物列表
         public static List<DecorationInfo> Decorations { get; private set; } = new List<DecorationInfo>();
-        
+
         // 记录状态发生变化的装饰物
         private static HashSet<string> changedDecorations = new HashSet<string>();
-        
+
         // 装饰物父级路径映射
         private static Dictionary<string?, string> parentPathMap = new Dictionary<string?, string>
         {
@@ -201,10 +363,10 @@ namespace MoreHead
             { "rightleg", "[RIG]/code_lean/code_tilt/ANIM BOT/code_leg_twist/_____________________________________/ANIM LEG R BOT/_____________________________________/ANIM LEG R TOP" },
             { "world", "" } // 世界空间节点路径（根目录，避免角色翻滚动画影响）
         };
-        
+
         // 外部DLL装饰物字典，键为DLL Assembly名称，值为该DLL加载的装饰物列表
         private static Dictionary<string, List<DecorationInfo>> externalDecorations = new Dictionary<string, List<DecorationInfo>>();
-        
+
         // 初始化装饰物管理器
         public static void Initialize()
         {
@@ -217,15 +379,15 @@ namespace MoreHead
                     false,
                     "启用模型加载日志（默认关闭） Enable model loading logs (default: off)"
                 );
-                
+
                 Logger?.LogInfo("正在初始化装饰物管理器...");
-                
+
                 // 清空装饰物列表
                 Decorations.Clear();
-                
+
                 // 加载所有.hhh后缀的AB包
                 LoadAllDecorations();
-                
+
                 Logger?.LogInfo($"装饰物管理器初始化完成，共加载了 {Decorations.Count} 个装饰物");
             }
             catch (Exception e)
@@ -233,7 +395,7 @@ namespace MoreHead
                 Logger?.LogError($"初始化装饰物管理器时出错: {e.Message}");
             }
         }
-        
+
         // 加载所有装饰物
         private static void LoadAllDecorations()
         {
@@ -246,7 +408,7 @@ namespace MoreHead
                     Logger?.LogError("无法获取MOD所在目录");
                     return;
                 }
-                
+
                 // 创建装饰物目录（如果不存在）
                 string decorationsDirectory = Path.Combine(modDirectory, "Decorations");
                 if (!Directory.Exists(decorationsDirectory))
@@ -254,28 +416,28 @@ namespace MoreHead
                     Directory.CreateDirectory(decorationsDirectory);
                     Logger?.LogInfo($"已创建装饰物目录: {decorationsDirectory}");
                 }
-                
+
                 // 存储所有找到的.hhh文件
                 List<string> allBundleFiles = new List<string>();
-                
+
                 // 1. 从Decorations目录加载（保留这一步，因为这是用户最直接放置自定义装饰物的地方）
                 string[] decorationsBundleFiles = Directory.GetFiles(decorationsDirectory, "*.hhh");
                 allBundleFiles.AddRange(decorationsBundleFiles);
-                
+
                 // 2. 查找并加载BepInEx/plugins目录下的所有.hhh文件
                 try
                 {
                     // 使用 BepInEx.Paths.PluginPath 获取插件目录
                     string pluginsDirectory = BepInEx.Paths.PluginPath;
-                    
+
                     if (!string.IsNullOrEmpty(pluginsDirectory) && Directory.Exists(pluginsDirectory))
                     {
                         //Logger?.LogInfo($"找到BepInEx/plugins目录: {pluginsDirectory}");
-                        
+
                         // 递归搜索plugins目录下的所有.hhh文件
                         string[] pluginsBundleFiles = Directory.GetFiles(pluginsDirectory, "*.hhh", SearchOption.AllDirectories);
                         allBundleFiles.AddRange(pluginsBundleFiles);
-                        
+
                         // Logger?.LogInfo($"在plugins目录中找到 {pluginsBundleFiles.Length} 个.hhh文件");
                     }
                     else
@@ -287,23 +449,23 @@ namespace MoreHead
                 {
                     Logger?.LogError($"搜索plugins目录时出错: {e.Message}");
                 }
-                
+
                 // 去重（可能有重复的文件路径）
                 allBundleFiles = allBundleFiles.Distinct().ToList();
-                
+
                 if (allBundleFiles.Count == 0)
                 {
                     Logger?.LogWarning("未找到任何装饰物包文件，请确保.hhh文件已放置");
                 }
                 //else
                 //{
-                    // Logger?.LogInfo($"找到 {allBundleFiles.Count} 个装饰物包文件");
-                    
-                    // 记录文件位置的详细信息
-                    // if (decorationsBundleFiles.Length > 0)
-                    //    Logger?.LogInfo($"- Decorations目录: {decorationsBundleFiles.Length} 个文件");
+                // Logger?.LogInfo($"找到 {allBundleFiles.Count} 个装饰物包文件");
+
+                // 记录文件位置的详细信息
+                // if (decorationsBundleFiles.Length > 0)
+                //    Logger?.LogInfo($"- Decorations目录: {decorationsBundleFiles.Length} 个文件");
                 //}
-                
+
                 // 加载每个装饰物包
                 foreach (string bundlePath in allBundleFiles)
                 {
@@ -315,12 +477,12 @@ namespace MoreHead
                 Logger?.LogError($"加载装饰物时出错: {e.Message}");
             }
         }
-        
+
         // 加载单个装饰物包
         private static void LoadDecorationBundle(string bundlePath)
         {
             AssetBundle? assetBundle = null;
-            
+
             try
             {
                 // 基本文件验证
@@ -329,7 +491,7 @@ namespace MoreHead
                     Logger?.LogWarning($"文件不存在: {bundlePath}");
                     return;
                 }
-                
+
                 // 检查文件大小，过小的文件可能不是有效的AssetBundle
                 FileInfo fileInfo = new FileInfo(bundlePath);
                 if (fileInfo.Length < 1024) // 小于1KB的文件可能不是有效的AssetBundle
@@ -337,14 +499,14 @@ namespace MoreHead
                     Logger?.LogWarning($"文件过小，可能不是有效的AssetBundle: {bundlePath}, 大小: {fileInfo.Length} 字节");
                     return;
                 }
-                
+
                 // 从文件名获取装饰物名称和父级标签
                 string fileName = Path.GetFileNameWithoutExtension(bundlePath);
-                
+
                 // 尝试从文件名中提取父级标签
                 string? parentTag = "head"; // 默认为head
                 string bundleBaseName = fileName;
-                
+
                 // 检查文件名是否包含下划线，格式应为 name_tag
                 if (fileName.Contains("_"))
                 {
@@ -353,7 +515,7 @@ namespace MoreHead
                     {
                         // 最后一部分作为标签
                         string? possibleTag = parts[parts.Length - 1].ToLower();
-                        
+
                         // 检查是否是有效的父级标签
                         if (parentPathMap.ContainsKey(possibleTag))
                         {
@@ -363,7 +525,7 @@ namespace MoreHead
                         }
                     }
                 }
-                
+
                 // 确保Name是唯一的
                 string uniqueName = EnsureUniqueName(bundleBaseName);
                 if (uniqueName != bundleBaseName)
@@ -371,7 +533,7 @@ namespace MoreHead
                     Logger?.LogWarning($"检测到重名，将基础名称从 {bundleBaseName} 修改为 {uniqueName}");
                     bundleBaseName = uniqueName;
                 }
-                
+
                 // 尝试加载AssetBundle
                 try
                 {
@@ -387,7 +549,7 @@ namespace MoreHead
                     Logger?.LogError($"加载AssetBundle时出错，文件可能不是有效的AssetBundle: {bundlePath}, 错误: {e.Message}");
                     return;
                 }
-                
+
                 try
                 {
                     // 获取所有资源名称
@@ -402,18 +564,18 @@ namespace MoreHead
                         assetBundle.Unload(true);
                         return;
                     }
-                    
+
                     if (assetNames.Length == 0)
                     {
                         Logger?.LogWarning($"AssetBundle不包含任何资源: {bundlePath}");
                         assetBundle.Unload(true);
                         return;
                     }
-                    
+
                     // 验证资源类型
                     bool foundValidAsset = false;
                     GameObject? prefab = null;
-                    
+
                     foreach (string assetName in assetNames)
                     {
                         try
@@ -432,17 +594,17 @@ namespace MoreHead
                             // 继续尝试下一个资源
                         }
                     }
-                    
+
                     if (!foundValidAsset || prefab == null)
                     {
                         Logger?.LogWarning($"AssetBundle不包含有效的GameObject资源: {bundlePath}");
                         assetBundle.Unload(true);
                         return;
                     }
-                    
+
                     // 使用预制体的名称作为装饰物的显示名称
                     string displayName = prefab.name;
-                    
+
                     // 确保DisplayName在UI中是唯一的
                     string uniqueDisplayName = EnsureUniqueDisplayName(displayName);
                     if (uniqueDisplayName != displayName)
@@ -450,7 +612,7 @@ namespace MoreHead
                         Logger?.LogWarning($"检测到显示名称重复，将显示名称从 {displayName} 修改为 {uniqueDisplayName}");
                         displayName = uniqueDisplayName;
                     }
-                    
+
                     // 创建装饰物信息
                     DecorationInfo decoration = new DecorationInfo
                     {
@@ -462,7 +624,7 @@ namespace MoreHead
                         BundlePath = bundlePath,
                         ModName = GetModNameFromPath(bundlePath)
                     };
-                    
+
                     // 检查是否在黑名单中
                     if (DecorationBlacklistManager.IsBlacklisted(displayName))
                     {
@@ -479,7 +641,7 @@ namespace MoreHead
                     {
                         Logger?.LogInfo($"成功加载装饰物: {decoration.DisplayName}, 标签: {decoration.ParentTag}");
                     }
-                    
+
                     // 卸载AssetBundle但保留已加载的资源
                     assetBundle.Unload(false);
                 }
@@ -501,45 +663,45 @@ namespace MoreHead
                 }
             }
         }
-        
+
         // 确保Name是唯一的
         private static string EnsureUniqueName(string baseName)
         {
             string name = baseName;
             int counter = 1;
-            
+
             // 检查是否已存在同名装饰物
             while (Decorations.Any(d => d.Name != null && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
                 name = $"{baseName}({counter})";
                 counter++;
             }
-            
+
             return name;
         }
-        
+
         // 确保DisplayName在UI中是唯一的
         private static string EnsureUniqueDisplayName(string baseDisplayName)
         {
             string displayName = baseDisplayName;
             int counter = 1;
-            
+
             // 检查是否已存在同名显示名称
             while (Decorations.Any(d => d.DisplayName != null && d.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase)))
             {
                 displayName = $"{baseDisplayName}({counter})";
                 counter++;
             }
-            
+
             return displayName;
         }
-        
+
         // 从预制体获取父级标签
         private static string? GetParentTagFromPrefab(GameObject prefab)
         {
             // 尝试从预制体名称中获取标签
             string name = prefab.name.ToLower();
-            
+
             // 检查名称是否包含已知的父级标签
             foreach (var tag in parentPathMap.Keys)
             {
@@ -548,13 +710,13 @@ namespace MoreHead
                     return tag;
                 }
             }
-            
+
             // 尝试获取自定义组件或属性
             // 这里可以扩展，例如检查自定义组件或标签
-            
+
             return null; // 返回null表示使用默认值
         }
-        
+
         // 获取装饰物显示状态
         public static bool GetDecorationState(string? name)
         {
@@ -562,7 +724,7 @@ namespace MoreHead
             var decoration = Decorations.FirstOrDefault(d => d.Name == name);
             return decoration?.IsVisible ?? false;
         }
-        
+
         // 设置装饰物显示状态
         public static void SetDecorationState(string name, bool isVisible)
         {
@@ -574,7 +736,7 @@ namespace MoreHead
                 changedDecorations.Add(name); // 记录状态发生变化的装饰物
             }
         }
-        
+
         // 切换装饰物显示状态
         public static bool ToggleDecorationState(string? name)
         {
@@ -589,7 +751,7 @@ namespace MoreHead
             }
             return false;
         }
-        
+
         // 获取父级路径
         public static string GetParentPath(string parentTag)
         {
@@ -597,23 +759,23 @@ namespace MoreHead
             {
                 return path;
             }
-            
+
             // 默认返回头部路径
             return parentPathMap["head"];
         }
-        
+
         // 获取发生状态变化的装饰物集合
         public static List<string> GetChangedDecorations()
         {
             return changedDecorations.ToList();
         }
-        
+
         // 清除变化记录
         public static void ClearChangedDecorations()
         {
             changedDecorations.Clear();
         }
-        
+
         // 禁用所有装饰物
         public static void DisableAllDecorations()
         {
@@ -628,7 +790,7 @@ namespace MoreHead
                         changedDecorations.Add(decoration.Name ?? string.Empty); // 记录变化
                     }
                 }
-                
+
                 // Logger?.LogInfo("已关闭所有装饰物");
             }
             catch (Exception e)
@@ -674,11 +836,11 @@ namespace MoreHead
             {
                 int loadedCount = 0;
                 string assemblyName = assembly.GetName().Name;
-                
+
                 // 获取DLL文件名（包含.dll后缀）作为模组名
                 string dllPath = assembly.Location;
                 string modName = Path.GetFileName(dllPath);
-                
+
                 // 初始化该Assembly的装饰物列表
                 if (!externalDecorations.ContainsKey(assemblyName))
                 {
@@ -689,24 +851,24 @@ namespace MoreHead
                     // 如果已存在，先清空之前的记录
                     externalDecorations[assemblyName].Clear();
                 }
-                
+
                 // 记录当前Decorations的数量，用于之后识别新增的装饰物
                 int startIndex = Decorations.Count;
-                
+
                 // 获取所有嵌入资源名称
                 string[] resourceNames = assembly.GetManifestResourceNames();
-                
+
                 // 筛选出.hhh后缀的资源
                 var hhhResources = resourceNames.Where(name => name.EndsWith(".hhh", StringComparison.OrdinalIgnoreCase));
-                
+
                 if (!hhhResources.Any())
                 {
                     Logger?.LogWarning($"在DLL {assemblyName} 中未找到.hhh资源");
                     return;
                 }
-                
+
                 Logger?.LogInfo($"在DLL {assemblyName} 中找到 {hhhResources.Count()} 个.hhh资源");
-                
+
                 // 加载每个.hhh资源
                 foreach (string resourceName in hhhResources)
                 {
@@ -729,17 +891,17 @@ namespace MoreHead
 
                         // 添加调试日志
                         Logger?.LogInfo($"处理资源: {resourceName}, 提取文件名: {fileName}");
-                        
+
                         // 读取资源数据
                         byte[] bundleData;
                         using (Stream stream = assembly.GetManifestResourceStream(resourceName))
                         {
                             if (stream == null) continue;
-                            
+
                             bundleData = new byte[stream.Length];
                             stream.Read(bundleData, 0, bundleData.Length);
                         }
-                        
+
                         // 加载AB包
                         if (LoadExternalAssetBundle(bundleData, fileName + ".hhh"))
                         {
@@ -751,7 +913,7 @@ namespace MoreHead
                         Logger?.LogError($"加载资源 {resourceName} 失败: {e.Message}");
                     }
                 }
-                
+
                 // 将新增的装饰物添加到该Assembly的记录中
                 if (loadedCount > 0)
                 {
@@ -762,7 +924,7 @@ namespace MoreHead
                         decoration.ModName = modName; // 设置DLL文件名作为模组名
                         externalDecorations[assemblyName].Add(decoration);
                     }
-                    
+
                     Logger?.LogInfo($"成功从DLL {assemblyName} 加载了 {loadedCount} 个资源，已保存到外部装饰物记录中");
                     // 应用已保存的装饰物状态
                     ConfigManager.ApplySavedStates();
@@ -784,12 +946,12 @@ namespace MoreHead
             }
             return new List<DecorationInfo>(); // 返回空列表而不是null
         }
-        
+
         // 获取指定DLL加载的所有装饰物的GameObject列表
         public static List<GameObject> GetDecorationGameObjectsFromAssembly(Assembly assembly)
         {
             List<GameObject> result = new List<GameObject>();
-            
+
             foreach (DecorationInfo decoration in GetDecorationsFromAssembly(assembly))
             {
                 if (decoration.Prefab != null)
@@ -797,20 +959,20 @@ namespace MoreHead
                     result.Add(decoration.Prefab);
                 }
             }
-            
+
             return result;
         }
-        
+
         // 根据名称查找指定DLL加载的装饰物
         public static DecorationInfo GetDecorationByName(Assembly assembly, string decorationName)
         {
             List<DecorationInfo> assemblyDecorations = GetDecorationsFromAssembly(assembly);
-            return assemblyDecorations.FirstOrDefault(d => 
+            return assemblyDecorations.FirstOrDefault(d =>
                 d.Name != null && d.Name.Equals(decorationName, StringComparison.OrdinalIgnoreCase) ||
                 d.DisplayName != null && d.DisplayName.Equals(decorationName, StringComparison.OrdinalIgnoreCase)
             );
         }
-        
+
         // 根据部分名称搜索指定DLL加载的装饰物（模糊匹配）
         public static List<DecorationInfo> FindDecorationsByPartialName(Assembly assembly, string partialName)
         {
@@ -818,10 +980,10 @@ namespace MoreHead
             {
                 return new List<DecorationInfo>();
             }
-            
+
             List<DecorationInfo> assemblyDecorations = GetDecorationsFromAssembly(assembly);
-            return assemblyDecorations.Where(d => 
-                (d.Name != null && d.Name.IndexOf(partialName, StringComparison.OrdinalIgnoreCase) >= 0) || 
+            return assemblyDecorations.Where(d =>
+                (d.Name != null && d.Name.IndexOf(partialName, StringComparison.OrdinalIgnoreCase) >= 0) ||
                 (d.DisplayName != null && d.DisplayName.IndexOf(partialName, StringComparison.OrdinalIgnoreCase) >= 0)
             ).ToList();
         }
@@ -833,7 +995,7 @@ namespace MoreHead
             {
                 // 调用MoreHeadUI的RecreateUI方法
                 MoreHeadUI.RecreateUI();
-                
+
                 // 不再记录日志，避免重复
             }
             catch (Exception e)
@@ -849,39 +1011,39 @@ namespace MoreHead
             {
                 if (string.IsNullOrEmpty(bundlePath))
                     return null;
-                
+
                 // 获取官方插件目录
                 string pluginsDirectory = BepInEx.Paths.PluginPath;
-                
+
                 // 验证插件目录是否有效
                 if (string.IsNullOrEmpty(pluginsDirectory) || !Directory.Exists(pluginsDirectory))
                 {
                     return null;
                 }
-                
+
                 // 检查是否在BepInEx/plugins目录下
                 if (!bundlePath.StartsWith(pluginsDirectory, StringComparison.OrdinalIgnoreCase))
                     return null;
-                
+
                 // 获取文件所在的文件夹
                 string? parentDirectory = Path.GetDirectoryName(bundlePath);
                 if (string.IsNullOrEmpty(parentDirectory))
                     return null;
-                
+
                 // 处理直到找到plugins目录下的文件夹
                 string directoryName = parentDirectory;
-                while (!string.IsNullOrEmpty(directoryName) && 
+                while (!string.IsNullOrEmpty(directoryName) &&
                        !Directory.GetParent(directoryName)?.FullName.Equals(pluginsDirectory, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     directoryName = Directory.GetParent(directoryName)?.FullName ?? string.Empty;
                 }
-                
+
                 if (string.IsNullOrEmpty(directoryName))
                     return null;
-                
+
                 // 获取文件夹名称
                 string folderName = Path.GetFileName(directoryName);
-                
+
                 // 检查文件夹名称中的破折号
                 string[] parts = folderName.Split('-');
                 if (parts.Length <= 1)
@@ -889,11 +1051,11 @@ namespace MoreHead
                     // 没有破折号，返回整个文件夹名
                     return folderName;
                 }
-                
+
                 // 检查最后一部分是否可能是版本号
                 string lastPart = parts[parts.Length - 1];
                 bool isLastPartVersion = IsLikelyVersionNumber(lastPart);
-                
+
                 if (isLastPartVersion && parts.Length > 2)
                 {
                     // 如果最后一部分像是版本号，且有多个破折号，使用倒数第二个破折号后的部分作为模组名
@@ -916,7 +1078,7 @@ namespace MoreHead
                 return null;
             }
         }
-        
+
         // 检查字符串是否可能是版本号
         private static bool IsLikelyVersionNumber(string text)
         {
@@ -924,11 +1086,11 @@ namespace MoreHead
             // 检查是否以数字开头
             if (text.Length == 0 || !char.IsDigit(text[0]))
                 return false;
-                
+
             // 检查是否包含常见版本号模式，如 1.0, v1.0, 1.0.0, 1.0.0.1 等
             bool hasNumericPart = false;
             bool hasSeparator = false;
-            
+
             foreach (char c in text)
             {
                 if (char.IsDigit(c))
@@ -940,7 +1102,7 @@ namespace MoreHead
                     hasSeparator = true;
                 }
             }
-            
+
             // 版本号通常有数字和分隔符
             return hasNumericPart && hasSeparator;
         }
