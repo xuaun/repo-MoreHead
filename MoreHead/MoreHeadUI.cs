@@ -642,7 +642,7 @@ namespace MoreHead
                 UpdateTagButtonHighlights();
 
                 // 更新装备方案按钮高亮状态
-                UpdateOutfitButtonHighlights();
+                // UpdateOutfitButtonHighlights();
             }
             catch (Exception e)
             {
