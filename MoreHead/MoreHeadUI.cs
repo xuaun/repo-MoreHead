@@ -104,6 +104,7 @@ namespace MoreHead
 
         // 装饰物搜索字段
         private static REPOInputField? decorationSearchField;
+        private static REPOButton? searchClearButton;
         private static string currentSearchText = "";
         private static bool isSearching = false;
         private static List<DecorationInfo> searchResults = new();
@@ -157,6 +158,20 @@ namespace MoreHead
                     "LobbyButtonPosY",
                     0f,
                     new ConfigDescription("Lobby button Y position", new AcceptableValueRange<float>(0f, 360f))
+                );
+
+                var mainMenuButtonPosX = Morehead.Instance?.Config.Bind(
+                    "UI",
+                    "MainMenuButtonPosX",
+                    618f,
+                    new ConfigDescription("Main menu button X position", new AcceptableValueRange<float>(0f, 618f))
+                );
+
+                var mainMenuButtonPosY = Morehead.Instance?.Config.Bind(
+                    "UI",
+                    "MainMenuButtonPosY",
+                    0f,
+                    new ConfigDescription("Main menu button Y position", new AcceptableValueRange<float>(0f, 360f))
                 );
 
                 outfitLabel1 = Morehead.Instance?.Config.Bind(
@@ -230,6 +245,15 @@ namespace MoreHead
                     Vector2 buttonPos = new Vector2(
                         lobbyButtonPosX?.Value ?? 0f,
                         lobbyButtonPosY?.Value ?? 0f
+                    );
+                    MenuAPI.CreateREPOButton(BUTTON_NAME, OnMenuButtonClick, parent, buttonPos);
+                });
+
+                MenuAPI.AddElementToMainMenu(parent =>
+                {
+                    Vector2 buttonPos = new Vector2(
+                        mainMenuButtonPosX?.Value ?? 0f,
+                        mainMenuButtonPosY?.Value ?? 0f
                     );
                     MenuAPI.CreateREPOButton(BUTTON_NAME, OnMenuButtonClick, parent, buttonPos);
                 });
@@ -448,7 +472,7 @@ namespace MoreHead
                         authorText = "<size=10><color=#FFFFA0>Masaicker</color> and <color=#FFFFA0>Yuriscat</color> co-developed.</size>";
                     }
 
-                    MenuAPI.CreateREPOButton(authorText, () => { }, parent, new Vector2(300, 329));
+                    MenuAPI.CreateREPOButton(authorText, () => { }, parent, new Vector2(300, 339));
                 });
             }
             catch (Exception e)
@@ -564,20 +588,22 @@ namespace MoreHead
         {
             try
             {
+                string oldTag = currentTagFilter;
+                if (isSearching || tag != currentTagFilter)
+                {
+                    ShowTagDecorations2(tag);
+                }
+
                 if (isSearching)
                 {
                     ClearSearchField();
                 }
 
-                // 如果点击的是当前标签，不做任何操作
-                if (tag == currentTagFilter)
+                if (tag == oldTag)
                 {
                     decorationsPage?.scrollView.SetScrollPosition(0);
                     return;
                 }
-
-                // 先显示当前标签的装饰物 (会更新currentTagFilter)
-                ShowTagDecorations2(tag);
 
                 // 然后更新标签按钮高亮状态
                 UpdateTagButtonHighlights();
@@ -789,6 +815,13 @@ namespace MoreHead
                         if (decorationButtons.TryGetValue(decorationName, out var btn))
                         {
                             tagScrollViewElements["FAV"].Remove(btn.repoScrollViewElement);
+
+                            btn.labelTMP.text = GetButtonText(decoration, decoration.IsVisible);
+
+                            if (currentTagFilter == "FAV")
+                            {
+                                decorationsPage?.scrollView.UpdateElements();
+                            }
                         }
                     }
                     else
@@ -798,9 +831,18 @@ namespace MoreHead
                         if (decorationButtons.TryGetValue(decorationName, out var btn))
                         {
                             tagScrollViewElements["FAV"].Add(btn.repoScrollViewElement);
+
+                            btn.labelTMP.text = GetButtonText(decoration, decoration.IsVisible);
+
+                            if (currentTagFilter == "FAV")
+                            {
+                                btn.repoScrollViewElement.visibility = true;
+                                decorationsPage?.scrollView.UpdateElements();
+                            }
                         }
                     }
 
+                    ReorderAllButtonsBySorting();
                     UpdateButtonStates();
                     return;
                 }
@@ -808,13 +850,37 @@ namespace MoreHead
                 // Alt = Toggle HIDE
                 if (isAltPressed)
                 {
-                    if (FavoritesManager.IsHidden(displayName2))
+                    bool wasHidden = FavoritesManager.IsHidden(displayName2);
+
+                    if (wasHidden)
                     {
                         FavoritesManager.RemoveHidden(displayName2);
 
                         if (decorationButtons.TryGetValue(decorationName, out var btn))
                         {
                             tagScrollViewElements["HIDE"].Remove(btn.repoScrollViewElement);
+
+                            btn.labelTMP.text = GetButtonText(decoration, decoration.IsVisible);
+
+                            if (currentTagFilter == "HIDE")
+                            {
+                                decorationsPage?.scrollView.UpdateElements();
+                            }
+
+                            string parentTag = decoration?.ParentTag?.ToUpper() ?? "";
+                            if (!string.IsNullOrEmpty(parentTag))
+                            {
+                                tagScrollViewElements["ALL"].Add(btn.repoScrollViewElement);
+
+                                if (LIMB_TAGS.Contains(parentTag))
+                                {
+                                    tagScrollViewElements["LIMBS"].Add(btn.repoScrollViewElement);
+                                }
+                                else if (tagScrollViewElements.ContainsKey(parentTag))
+                                {
+                                    tagScrollViewElements[parentTag].Add(btn.repoScrollViewElement);
+                                }
+                            }
                         }
                     }
                     else
@@ -824,9 +890,30 @@ namespace MoreHead
                         if (decorationButtons.TryGetValue(decorationName, out var btn))
                         {
                             tagScrollViewElements["HIDE"].Add(btn.repoScrollViewElement);
+
+                            btn.labelTMP.text = GetButtonText(decoration, decoration.IsVisible);
+
+                            if (currentTagFilter == "HIDE")
+                            {
+                                btn.repoScrollViewElement.visibility = true;
+                                decorationsPage?.scrollView.UpdateElements();
+                            }
+
+                            string parentTag = decoration?.ParentTag?.ToUpper() ?? "";
+                            tagScrollViewElements["ALL"].Remove(btn.repoScrollViewElement);
+
+                            if (LIMB_TAGS.Contains(parentTag))
+                            {
+                                tagScrollViewElements["LIMBS"].Remove(btn.repoScrollViewElement);
+                            }
+                            else if (!string.IsNullOrEmpty(parentTag) && tagScrollViewElements.ContainsKey(parentTag))
+                            {
+                                tagScrollViewElements[parentTag].Remove(btn.repoScrollViewElement);
+                            }
                         }
                     }
 
+                    ReorderAllButtonsBySorting();
                     UpdateButtonStates();
                     return;
                 }
@@ -984,6 +1071,7 @@ namespace MoreHead
         {
             try
             {
+                ClearSearchField();
                 decorationsPage?.ClosePage(true);
             }
             catch (Exception e)
@@ -1236,6 +1324,7 @@ namespace MoreHead
                 isSearching = false;
                 searchResults.Clear();
                 decorationSearchField = null;
+                searchClearButton = null;
 
                 // 销毁现有页面
                 if (decorationsPage != null && decorationsPage.gameObject != null)
@@ -1377,34 +1466,33 @@ namespace MoreHead
                     // 将按钮添加到对应的标签分类中
                     // Aqui eu quero que os elementos hide só apareçam no menu hide, os fav podem aparecer em todos, inclusive no menu fav
 
-                    // 隐藏的元素只应出现在HIDE菜单中，不应出现在其他地方
-                    if (!isHidden)
+                    // Itens ocultos APENAS aparecem no menu HIDE (nunca em outros menus, nem FAV)
+                    if (isHidden)
                     {
+                        // Adicionar APENAS ao menu HIDE
+                        tagScrollViewElements["HIDE"].Add(repoButton.repoScrollViewElement);
+                    }
+                    else
+                    {
+                        // Item não está oculto, adicionar aos menus normais
                         tagScrollViewElements["ALL"].Add(repoButton.repoScrollViewElement);
 
-                        // 处理四肢装饰物的特殊情况
+                        // Processar tags de membros (LIMBS)
                         if (LIMB_TAGS.Contains(parentTag.ToUpper()))
                         {
-                            // 同时添加到LIMBS标签分类
                             tagScrollViewElements["LIMBS"].Add(repoButton.repoScrollViewElement);
                         }
-                        // 同时添加到父标签分类
+                        // Adicionar à tag pai
                         else if (tagScrollViewElements.TryGetValue(parentTag.ToUpper(), out var elements))
                         {
                             elements.Add(repoButton.repoScrollViewElement);
                         }
-                    }
 
-                    // 添加到收藏菜单（即使被隐藏也可以在收藏菜单中显示）
-                    if (isFavorite)
-                    {
-                        tagScrollViewElements["FAV"].Add(repoButton.repoScrollViewElement);
-                    }
-
-                    // 添加到隐藏菜单
-                    if (isHidden)
-                    {
-                        tagScrollViewElements["HIDE"].Add(repoButton.repoScrollViewElement);
+                        // Adicionar ao menu FAV se for favorito (mas só se NÃO estiver oculto)
+                        if (isFavorite)
+                        {
+                            tagScrollViewElements["FAV"].Add(repoButton.repoScrollViewElement);
+                        }
                     }
                 }
             }
@@ -1507,20 +1595,14 @@ namespace MoreHead
 
                 ReorderAllButtonsBySorting();
 
-                // 隐藏当前标签的装饰物按钮
-                if (!string.IsNullOrEmpty(currentTagFilter) &&
-                    tagScrollViewElements.TryGetValue(currentTagFilter, out var currentElements))
+                foreach (var btn in decorationButtons.Values)
                 {
-                    foreach (var element in currentElements)
+                    if (btn?.repoScrollViewElement != null)
                     {
-                        if (element != null)
-                        {
-                            element.visibility = false;
-                        }
+                        btn.repoScrollViewElement.visibility = false;
                     }
                 }
 
-                // 显示新标签的装饰物按钮
                 if (!string.IsNullOrEmpty(tag) &&
                     tagScrollViewElements.TryGetValue(tag, out var newElements))
                 {
@@ -1897,6 +1979,21 @@ namespace MoreHead
                         new Vector2(70, 310)
                     );
                 });
+
+                page?.AddElement(parent =>
+                {
+                    searchClearButton = MenuAPI.CreateREPOButton(
+                        "<size=13><color=#FF4444>[X]</color></size>",
+                        OnSearchClearButtonClick,
+                        parent,
+                        new Vector2(323, 313)
+                    );
+
+                    if (searchClearButton?.gameObject != null)
+                    {
+                        searchClearButton.gameObject.SetActive(false);
+                    }
+                });
             }
             catch (Exception e)
             {
@@ -1908,7 +2005,20 @@ namespace MoreHead
         {
             try
             {
-                currentSearchText = searchText?.Trim() ?? "";
+                string originalText = searchText ?? "";
+                searchText = new string(originalText.Where(c => c >= 32 && c != 127).ToArray());
+
+                if (searchText != originalText && decorationSearchField?.inputStringSystem != null)
+                {
+                    decorationSearchField.inputStringSystem.SetValue(searchText, false);
+                }
+
+                currentSearchText = searchText.Trim();
+
+                if (searchClearButton?.gameObject != null)
+                {
+                    searchClearButton.gameObject.SetActive(!string.IsNullOrEmpty(currentSearchText));
+                }
 
                 if (decorationsPage == null)
                 {
@@ -1971,6 +2081,19 @@ namespace MoreHead
             }
         }
 
+        private static void OnSearchClearButtonClick()
+        {
+            try
+            {
+                ClearSearchField();
+                ShowTagDecorations2(currentTagFilter);
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"✗ Erro ao clicar no botão de limpar busca: {e.Message}");
+            }
+        }
+
         private static void ClearSearchField()
         {
             try
@@ -1981,6 +2104,11 @@ namespace MoreHead
                     currentSearchText = "";
                     isSearching = false;
                     searchResults.Clear();
+                }
+
+                if (searchClearButton?.gameObject != null)
+                {
+                    searchClearButton.gameObject.SetActive(false);
                 }
             }
             catch (Exception e)
