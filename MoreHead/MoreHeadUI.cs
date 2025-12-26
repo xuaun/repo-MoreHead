@@ -592,6 +592,7 @@ namespace MoreHead
                 string oldTag = currentTagFilter;
                 if (isSearching || tag != currentTagFilter)
                 {
+                    ReorderAllButtonsBySorting();
                     ShowTagDecorations2(tag);
                 }
 
