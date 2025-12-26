@@ -23,6 +23,7 @@ namespace MoreHead
             var sorted = decorations
                 .OrderByDescending(d => d.IsVisible)
                 .ThenByDescending(d => FavoritesManager.IsFavorite(d.DisplayName ?? ""))
+                .ThenByDescending(d => NewItemsManager.IsNew(d.DisplayName ?? ""))
                 .ThenBy(d => d.Name != d.DisplayName ? 1 : 0)
                 .ThenBy(d => d.DisplayName)
                 .ToList();
@@ -842,8 +843,19 @@ namespace MoreHead
                         }
                     }
 
-                    ReorderAllButtonsBySorting();
+                    // ReorderAllButtonsBySorting();
                     UpdateButtonStates();
+
+                    if (decorationButtons.TryGetValue(decorationName, out var clickedBtn) &&
+                        buttonMarkers.TryGetValue(decorationName, out var marker) &&
+                        marker?.Decoration != null &&
+                        !string.IsNullOrEmpty(marker.Decoration.ModName))
+                    {
+                        if (!clickedBtn.labelTMP.text.Contains(marker.Decoration.ModName))
+                        {
+                            clickedBtn.labelTMP.text = $"{clickedBtn.labelTMP.text} <size=12><color=#AAAAAA>- {marker.Decoration.ModName}</color></size>";
+                        }
+                    }
                     return;
                 }
 
@@ -913,9 +925,26 @@ namespace MoreHead
                         }
                     }
 
-                    ReorderAllButtonsBySorting();
+                    // ReorderAllButtonsBySorting();
                     UpdateButtonStates();
+
+                    if (decorationButtons.TryGetValue(decorationName, out var clickedBtn) &&
+                        buttonMarkers.TryGetValue(decorationName, out var marker) &&
+                        marker?.Decoration != null &&
+                        !string.IsNullOrEmpty(marker.Decoration.ModName))
+                    {
+                        if (!clickedBtn.labelTMP.text.Contains(marker.Decoration.ModName))
+                        {
+                            clickedBtn.labelTMP.text = $"{clickedBtn.labelTMP.text} <size=12><color=#AAAAAA>- {marker.Decoration.ModName}</color></size>";
+                        }
+                    }
                     return;
+                }
+
+                string displayNameForNew = decoration.DisplayName ?? string.Empty;
+                if (NewItemsManager.IsNew(displayNameForNew))
+                {
+                    NewItemsManager.MarkAsViewed(displayNameForNew);
                 }
 
                 // 正常操作：切换装饰物状态
@@ -990,11 +1019,16 @@ namespace MoreHead
 
             bool isFavorite = FavoritesManager.IsFavorite(displayName);
             bool isHidden = FavoritesManager.IsHidden(displayName);
+            bool isNew = NewItemsManager.IsNew(displayName);
 
             string favHideSuffix = "";
+            if (isNew)
+            {
+                favHideSuffix = "<color=#008b09>[NEW]</color> ";
+            }
             if (isFavorite)
             {
-                favHideSuffix = "<color=#FFD700>[FAV]</color> ";
+                favHideSuffix += "<color=#FFD700>[FAV]</color> ";
             }
             if (isHidden)
             {
@@ -1432,10 +1466,11 @@ namespace MoreHead
                     }
                 }
 
-                // 获取FAV/HIDE状态
+                // 获取FAV/HIDE/NEW状态
                 string displayName = decoration.DisplayName ?? string.Empty;
                 bool isFavorite = FavoritesManager.IsFavorite(displayName);
                 bool isHidden = FavoritesManager.IsHidden(displayName);
+                bool isNew = NewItemsManager.IsNew(displayName);
 
                 // 创建按钮
                 REPOButton? repoButton = null;

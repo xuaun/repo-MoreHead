@@ -7,6 +7,7 @@ using UnityEngine;
 using System.Reflection;
 using BepInEx.Configuration;
 using Newtonsoft.Json;
+using BCE;
 
 namespace MoreHead
 {
@@ -25,8 +26,14 @@ namespace MoreHead
             {
                 LoadFavorites();
                 Logger?.LogInfo($"FavoritesManager initialized: {_favorites.Count} favorites, {_hidden.Count} hidden");
-                Logger?.LogInfo($"Favorites list: [{string.Join(", ", _favorites)}]");
-                Logger?.LogInfo($"Hidden list: [{string.Join(", ", _hidden)}]");
+                console.Write("[Info   :  MoreHead] Favorites: ", ConsoleColor.DarkYellow);
+                console.Write("[", ConsoleColor.DarkYellow);
+                console.Write(string.Join(", ", _favorites), ConsoleColor.DarkYellow);
+                console.WriteLine("]", ConsoleColor.DarkYellow);
+                console.Write("[Info   :  MoreHead] Hidden list: ", ConsoleColor.DarkGray);
+                console.Write("[", ConsoleColor.DarkGray);
+                console.Write(string.Join(", ", _hidden), ConsoleColor.DarkGray);
+                console.WriteLine("]", ConsoleColor.DarkGray);
             }
             catch (Exception e)
             {
@@ -170,6 +177,169 @@ namespace MoreHead
     {
         public List<string> Favorites { get; set; } = [];
         public List<string> Hidden { get; set; } = [];
+    }
+
+    public static class NewItemsManager
+    {
+        private static ManualLogSource? Logger => Morehead.Logger;
+
+        private static HashSet<string> _newItems = [];
+        private static HashSet<string> _viewedItems = [];
+
+        private static readonly string NewItemsFilePath = Path.Combine(BepInEx.Paths.ConfigPath, "MoreHeadNewItems.json");
+
+        public static void Initialize()
+        {
+            try
+            {
+                LoadNewItems();
+
+                bool hasChanges = false;
+                foreach (var decoration in HeadDecorationManager.Decorations)
+                {
+                    string displayName = decoration.DisplayName ?? string.Empty;
+                    if (!string.IsNullOrEmpty(displayName) &&
+                        !_newItems.Contains(displayName) &&
+                        !_viewedItems.Contains(displayName))
+                    {
+                        _newItems.Add(displayName);
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges)
+                {
+                    SaveNewItems();
+                }
+
+                Logger?.LogInfo($"NewItemsManager initialized: {_newItems.Count} new items, {_viewedItems.Count} viewed items");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"Error initializing NewItemsManager: {e.Message}");
+            }
+        }
+
+        public static void LoadNewItems()
+        {
+            try
+            {
+                if (!File.Exists(NewItemsFilePath))
+                {
+                    _newItems.Clear();
+                    _viewedItems.Clear();
+                    SaveNewItems();
+                    return;
+                }
+
+                string json = File.ReadAllText(NewItemsFilePath);
+                var data = JsonConvert.DeserializeObject<NewItemsData>(json);
+
+                if (data is not null)
+                {
+                    _newItems = new HashSet<string>(data.NewItems ?? []);
+                    _viewedItems = new HashSet<string>(data.ViewedItems ?? []);
+                }
+                else
+                {
+                    _newItems.Clear();
+                    _viewedItems.Clear();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"Error loading new items: {e.Message}");
+                _newItems.Clear();
+                _viewedItems.Clear();
+            }
+        }
+
+        public static void SaveNewItems()
+        {
+            try
+            {
+                var data = new NewItemsData
+                {
+                    NewItems = _newItems.ToList(),
+                    ViewedItems = _viewedItems.ToList()
+                };
+
+                string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+                File.WriteAllText(NewItemsFilePath, json);
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"Error saving new items: {e.Message}");
+            }
+        }
+
+        public static bool IsNew(string name)
+        {
+            bool result = !string.IsNullOrEmpty(name) && _newItems.Contains(name);
+            return result;
+        }
+
+        public static void MarkAsViewed(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+
+            bool changed = false;
+            if (_newItems.Remove(name))
+            {
+                changed = true;
+            }
+            if (_viewedItems.Add(name))
+            {
+                changed = true;
+            }
+
+            if (changed)
+            {
+                SaveNewItems();
+            }
+        }
+
+        public static void MarkAsNew(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+
+            bool changed = false;
+            if (_viewedItems.Remove(name))
+            {
+                changed = true;
+            }
+            if (_newItems.Add(name))
+            {
+                changed = true;
+            }
+
+            if (changed)
+            {
+                SaveNewItems();
+            }
+        }
+
+        public static List<string> GetNewItems() => _newItems.ToList();
+        public static List<string> GetViewedItems() => _viewedItems.ToList();
+
+        public static void ClearNewItems()
+        {
+            _newItems.Clear();
+            SaveNewItems();
+        }
+
+        public static void ClearViewedItems()
+        {
+            _viewedItems.Clear();
+            SaveNewItems();
+        }
+    }
+
+    [Serializable]
+    public class NewItemsData
+    {
+        public List<string> NewItems { get; set; } = [];
+        public List<string> ViewedItems { get; set; } = [];
     }
 
     // 装饰物黑名单管理器

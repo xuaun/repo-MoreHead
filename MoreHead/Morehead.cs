@@ -10,8 +10,10 @@ using MoreHead;
 using System;
 using TMPro;
 using System.Linq;
+using BCE;
 
 [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+[BepInDependency("space.customizing.console", BepInDependency.DependencyFlags.HardDependency)]
 public class Morehead : BaseUnityPlugin
 {
     private const string PluginGuid = "Mhz.REPOMoreHead";
@@ -61,6 +63,18 @@ public class Morehead : BaseUnityPlugin
 ";
 
             Logger?.LogMessage(asciiArt);
+            console.WriteLine(Environment.NewLine + "                      ► Modified version by Xuaun :3" + Environment.NewLine, ConsoleColor.DarkYellow);
+            console.WriteLine("════════════════════════════════════════════════════════════════════════════════", ConsoleColor.DarkCyan);
+            console.Write("[Info   :  MoreHead] ", ConsoleColor.Cyan);
+            console.WriteLine(" ► Modified by Xuaun - Some new features:", ConsoleColor.DarkCyan);
+            console.WriteLine("[Info   :  MoreHead]    - Updated sorting", ConsoleColor.Cyan);
+            console.WriteLine("[Info   :  MoreHead]    - Added new tags (new, favorite, hidden)", ConsoleColor.Cyan);
+            console.WriteLine("[Info   :  MoreHead]    - Added search", ConsoleColor.Cyan);
+            console.WriteLine("[Info   :  MoreHead]    - More outfits slots", ConsoleColor.Cyan);
+            console.WriteLine("[Info   :  MoreHead]    - Added rename for outfits/sets", ConsoleColor.Cyan);
+            console.Write(Environment.NewLine + "[Info   :  MoreHead] ", ConsoleColor.Cyan);
+            console.WriteLine("   Enjoy R.E.P.O. and have fun playing with your friends!", ConsoleColor.DarkCyan);
+            console.WriteLine("════════════════════════════════════════════════════════════════════════════════" + Environment.NewLine, ConsoleColor.DarkCyan);
 
             DecorationBlacklistManager.Initialize();
 
@@ -68,6 +82,8 @@ public class Morehead : BaseUnityPlugin
 
             // 初始化装饰物管理器
             HeadDecorationManager.Initialize();
+
+            NewItemsManager.Initialize();
 
             // 初始化配置管理器 - 在装饰物管理器之后初始化，以便应用已保存的状态
             ConfigManager.Initialize();
