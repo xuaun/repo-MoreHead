@@ -1693,12 +1693,22 @@ namespace MoreHead
                 // 获取当前选中的方案索引
                 int currentOutfit = ConfigManager.GetCurrentOutfitIndex();
 
+                page?.AddElement(parent =>
+                {
+                    MenuAPI.CreateREPOButton(
+                        "<size=14><color=#FFAA00>Ctrl+Click to Rename</color></size>",
+                        () => { },
+                        parent,
+                        new Vector2(600, 305)
+                    );
+                });
+
                 // 按钮的垂直间距
                 const int buttonSpacing = 25;
                 // 固定X坐标
-                const int x = 640;
+                const int x = 600;
                 // 起始Y坐标
-                const int startY = 260;
+                const int startY = 280;
 
                 // 为每个装备方案创建按钮
                 for (int i = 1; i <= 9; i++)
@@ -1754,6 +1764,12 @@ namespace MoreHead
                 9 => outfitLabel9?.Value,
                 _ => null
             };
+
+            if (!string.IsNullOrWhiteSpace(label) && label!.Length > 10)
+            {
+                label = label.Substring(0, 10) + "..";
+            }
+
             return string.IsNullOrWhiteSpace(label) ? index.ToString() : label!;
         }
 
@@ -1762,8 +1778,8 @@ namespace MoreHead
             try
             {
                 const int buttonSpacing = 25;
-                const int x = 540;
-                const int startY = 260;
+                const int x = 505;
+                const int startY = 280;
 
                 for (int i = 1; i <= 9; i++)
                 {
@@ -1780,6 +1796,11 @@ namespace MoreHead
                                 string cleanValue = (value ?? "")
                                     .Replace("<b>|</b>", "")
                                     .Trim();
+
+                                if (!string.IsNullOrEmpty(cleanValue) && cleanValue.Length > 11)
+                                {
+                                    cleanValue = cleanValue.Substring(0, 11);
+                                }
 
                                 switch (outfitIndex)
                                 {
