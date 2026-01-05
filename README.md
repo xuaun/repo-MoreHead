@@ -31,7 +31,8 @@ Items marked with the **HIDE** tag will only be visible when you select the HIDE
 
 # Known Issues
 
-- Sorting may not always display grouped items correctly; switching tags/filters and returning usually fixes this.
+- The sorting feature *broke* the grouped items display, causing items from the same group to be shown separately rather than inside their group.
+- Also, sorting may not always display grouped items correctly; switching tags/filters and returning usually fixes this.
 - Code could be further optimized, especially regarding cache handling.
 - On the main menu, your Semibot will appear white (no color).
 - Typing "B" in the search bar may trigger the in-game mute/unmute shortcut.
