@@ -36,7 +36,6 @@ Items marked with the **HIDE** tag will only be visible when you select the HIDE
 - On the main menu, your Semibot will appear white (no color).
 - Typing "B" in the search bar may trigger the in-game mute/unmute shortcut.
 - Outfit names may overflow the UI if too long.
-- The search bar may not clear visually when reopening the menu, but it won't filter until you type again.
 - There is no clear indication in the in-game UI (yet) about how to rename outfits (use **Ctrl + click** on the slot).
 - Before the main menu appears (slide to the left), the MoreHead menu button may briefly show up on the initial screen due to its position, but this does not affect its usability.
 

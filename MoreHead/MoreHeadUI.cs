@@ -386,6 +386,8 @@ namespace MoreHead
 
                 ReorderAllButtonsBySorting();
 
+                ClearSearchField();
+
                 // 打开页面
                 decorationsPage.OpenPage(false);
 
