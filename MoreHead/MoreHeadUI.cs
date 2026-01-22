@@ -2035,7 +2035,10 @@ namespace MoreHead
                             OnSearchTextChanged(value ?? "");
                         },
                         parent,
-                        new Vector2(70, 310)
+                        new Vector2(70, 310),
+                        onlyNotifyOnSubmit: false,
+                        placeholder: "Type to search...",
+                        defaultValue: ""
                     );
                 });
 
