@@ -6,9 +6,9 @@
         <LangVersion>latest</LangVersion>
         
         <!-- 添加程序集版本信息 -->
-        <AssemblyVersion>1.4.4.0</AssemblyVersion>
-        <FileVersion>1.4.4.0</FileVersion>
-        <Version>1.4.4</Version>
+        <AssemblyVersion>1.4.5.0</AssemblyVersion>
+        <FileVersion>1.4.5.0</FileVersion>
+        <Version>1.4.5</Version>
         <Authors>Masaicker, YurisCat</Authors>
         <Company>YMC_MHZ</Company>
         <Product>MoreHead</Product>
@@ -30,10 +30,13 @@
         <SubPath Condition="'$(SubPath)' == ''" />
     </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
+    </ItemGroup>
     
     <ItemGroup>
         <Reference Include="$(RepoPath)$(SubPath)*Unity*" Private="false" />
-        <Reference Include="$(RepoPath)$(SubPath)Assembly-CSharp*" Private="false" />
+        <Reference Include="$(RepoPath)$(SubPath)Assembly-CSharp*" Publicize="true" Private="false" />
         <Reference Include="$(RepoPath)$(SubPath)Newtonsoft*" Private="false" />
         <Reference Include="$(RepoPath)$(SubPath)Photon*" Private="false" />
         <Reference Include="$(RepoPath)$(SubPath)*Steamworks*" Private="false" />
