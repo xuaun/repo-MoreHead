@@ -103,6 +103,9 @@ namespace MoreHead
 
         private static Dictionary<int, REPOInputField> outfitInputFields = new Dictionary<int, REPOInputField>();
 
+        // Flag to prevent CheckInputFieldsClickOutside from closing an input that was just activated in the same click
+        private static bool _inputJustActivated = false;
+
         // 装饰物搜索字段
         private static REPOInputField? decorationSearchField;
         private static REPOButton? searchClearButton;
@@ -1696,7 +1699,7 @@ namespace MoreHead
                 page?.AddElement(parent =>
                 {
                     MenuAPI.CreateREPOButton(
-                        "<size=14><color=#FFAA00>Ctrl+Click to Rename</color></size>",
+                        "<size=14><color=#FFAA00>Shift+Click to Rename</color></size>",
                         () => { },
                         parent,
                         new Vector2(600, 305)
@@ -1931,9 +1934,9 @@ namespace MoreHead
         {
             try
             {
-                bool isCtrlPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+                bool isShiftPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-                if (isCtrlPressed)
+                if (isShiftPressed)
                 {
                     if (outfitButtons.TryGetValue(outfitIndex, out var btn) && btn?.gameObject != null)
                     {
@@ -1942,6 +1945,8 @@ namespace MoreHead
 
                     if (outfitInputFields.TryGetValue(outfitIndex, out var input) && input?.gameObject != null)
                     {
+                        _inputJustActivated = true;
+
                         input.gameObject.SetActive(true);
 
                         string currentLabel = GetOutfitLabel(outfitIndex);
@@ -2232,6 +2237,12 @@ namespace MoreHead
         {
             try
             {
+                if (_inputJustActivated)
+                {
+                    _inputJustActivated = false;
+                    return;
+                }
+
                 foreach (var kvp in outfitInputFields)
                 {
                     int outfitIndex = kvp.Key;
