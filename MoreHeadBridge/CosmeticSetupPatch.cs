@@ -15,7 +15,8 @@ internal static class CosmeticSetupPatch
     [HarmonyPrefix]
     private static void Prefix(Cosmetic __instance)
     {
-        if (!BridgeIds.IsBridgeAsset(__instance?.cosmeticAsset)) return;
+        if (__instance == null) return;
+        if (!BridgeIds.IsBridgeAsset(__instance.cosmeticAsset)) return;
         if (__instance.type != SemiFunc.CosmeticType.Hat &&
             __instance.type != SemiFunc.CosmeticType.HeadTopMesh)
             return;

@@ -97,9 +97,9 @@ internal static class UnlockPatch
             return;
         }
 
-        int removedUnlocks  = instance.cosmeticUnlocks.RemoveAll(bridgeIndices.Contains);
+        int removedUnlocks = instance.cosmeticUnlocks.RemoveAll(bridgeIndices.Contains);
         int removedEquipped = instance.cosmeticEquipped.RemoveAll(bridgeIndices.Contains);
-        int removedHistory  = instance.cosmeticHistory.RemoveAll(bridgeIndices.Contains);
+        int removedHistory = instance.cosmeticHistory.RemoveAll(bridgeIndices.Contains);
 
         instance.Save();
 

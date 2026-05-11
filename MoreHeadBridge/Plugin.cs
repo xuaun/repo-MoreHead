@@ -12,7 +12,7 @@ namespace MoreHeadBridge;
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency("REPOLib")]
 [BepInDependency("space.customizing.console", BepInDependency.DependencyFlags.SoftDependency)]
-[BepInDependency("Mhz.REPOMoreHead",          BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency("Mhz.REPOMoreHead", BepInDependency.DependencyFlags.SoftDependency)]
 public class Plugin : BaseUnityPlugin
 {
     public static Plugin Instance { get; private set; } = null!;
@@ -22,15 +22,15 @@ public class Plugin : BaseUnityPlugin
 
     public static ConfigEntry<bool> ResetUnlocks { get; private set; } = null!;
 
-    // [MenuCapture] V1 — reactive hover capture.
+    // [MenuCapture] — reactive hover capture.
     public static ConfigEntry<bool> AutoCaptureIcons { get; private set; } = null!;
 
-    // [MenuCapture] V2 — one-shot batch.
+    // [MenuCapture] — one-shot batch.
     public static ConfigEntry<bool> GenerateAllIcons { get; private set; } = null!;
 
     // [MenuCapture] Cache deletion.
-    public static ConfigEntry<bool>   DeleteIconCache       { get; private set; } = null!;
-    public static ConfigEntry<string> DeleteIconsMatching   { get; private set; } = null!;
+    public static ConfigEntry<bool> DeleteIconCache { get; private set; } = null!;
+    public static ConfigEntry<string> DeleteIconsMatching { get; private set; } = null!;
 
     public static ConfigEntry<bool> HideMoreHeadUI { get; private set; } = null!;
 
@@ -50,13 +50,13 @@ public class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
-        Logger   = base.Logger;
+        Logger = base.Logger;
 
         UnlockAll = Config.Bind(
-            section:      "General",
-            key:          "UnlockAll",
+            section: "General",
+            key: "UnlockAll",
             defaultValue: true,
-            description:  "Auto-unlock NEW bridge cosmetics on every load.\n" +
+            description: "Auto-unlock NEW bridge cosmetics on every load.\n" +
                           "\n" +
                           "When TRUE  — every bridge cosmetic gets added to your inventory\n" +
                           "             on game start, so you never have to grind for them.\n" +
@@ -71,33 +71,33 @@ public class Plugin : BaseUnityPlugin
         );
 
         HideMoreHeadUI = Config.Bind(
-            section:      "General",
-            key:          "HideMoreHeadUI",
+            section: "General",
+            key: "HideMoreHeadUI",
             defaultValue: false,
-            description:  "If true, removes the MoreHead button from all menus so you can use only the vanilla cosmetics UI. Requires restart."
+            description: "If true, removes the MoreHead button from all menus so you can use only the vanilla cosmetics UI. Requires restart."
         );
 
         DefaultRarity = Config.Bind(
-            section:      "General",
-            key:          "DefaultRarity",
+            section: "General",
+            key: "DefaultRarity",
             defaultValue: SemiFunc.Rarity.Common,
-            description:  "Rarity tier assigned to bridge cosmetics in the vanilla shop. Values: Common, Uncommon, Rare, UltraRare."
+            description: "Rarity tier assigned to bridge cosmetics in the vanilla shop. Values: Common, Uncommon, Rare, UltraRare."
         );
 
         IncludeFolders = Config.Bind(
-            section:      "General",
-            key:          "IncludeFolders",
+            section: "General",
+            key: "IncludeFolders",
             defaultValue: "",
-            description:  "Comma-separated subfolder names under BepInEx/plugins to scan for .hhh files. Empty = scan all. " +
+            description: "Comma-separated subfolder names under BepInEx/plugins to scan for .hhh files. Empty = scan all. " +
                           "Example: 'Some-MoreHeadPack,Another-CosmeticsPack'. Matching is case-insensitive and uses path contains."
         );
 
         // [MenuCapture] BEGIN — icon-from-menu config.
         AutoCaptureIcons = Config.Bind(
-            section:      "Icons",
-            key:          "AutoCaptureIcons",
+            section: "Icons",
+            key: "AutoCaptureIcons",
             defaultValue: true,
-            description:  "Reactively capture icons while you browse the cosmetics menu.\n" +
+            description: "Reactively capture icons while you browse the cosmetics menu.\n" +
                           "\n" +
                           "When TRUE  — every time you HOVER a bridge cosmetic in the menu,\n" +
                           "             the game's existing avatar preview is snapshotted and\n" +
@@ -115,10 +115,10 @@ public class Plugin : BaseUnityPlugin
         );
 
         GenerateAllIcons = Config.Bind(
-            section:      "Icons",
-            key:          "GenerateAllIcons",
+            section: "Icons",
+            key: "GenerateAllIcons",
             defaultValue: false,
-            description:  "ONE-SHOT trigger. When TRUE, the next time you open the cosmetics menu\n" +
+            description: "ONE-SHOT trigger. When TRUE, the next time you open the cosmetics menu\n" +
                           "the mod will cycle through EVERY bridge cosmetic without a cached icon,\n" +
                           "preview-equipping each one, snapshotting the avatar, and saving the PNG.\n" +
                           "\n" +
@@ -134,20 +134,20 @@ public class Plugin : BaseUnityPlugin
         );
 
         DeleteIconCache = Config.Bind(
-            section:      "Icons",
-            key:          "DeleteIconCache",
+            section: "Icons",
+            key: "DeleteIconCache",
             defaultValue: false,
-            description:  "ONE-SHOT trigger. When TRUE on launch, delete cached bridge icon PNGs from:\n" +
+            description: "ONE-SHOT trigger. When TRUE on launch, delete cached bridge icon PNGs from:\n" +
                           "  %userprofile%\\AppData\\LocalLow\\semiwork\\REPO\\MoreHeadBridge_Icons\\\n" +
                           "Use DeleteIconsMatching to filter which ones to delete.\n" +
                           "Auto-resets to FALSE after running."
         );
 
         DeleteIconsMatching = Config.Bind(
-            section:      "Icons",
-            key:          "DeleteIconsMatching",
+            section: "Icons",
+            key: "DeleteIconsMatching",
             defaultValue: "",
-            description:  "Optional comma-separated filter for DeleteIconCache. Case-insensitive\n" +
+            description: "Optional comma-separated filter for DeleteIconCache. Case-insensitive\n" +
                           "substring match against the icon filename (which is the cosmetic's internal name).\n" +
                           "Empty = delete ALL bridge icons.\n" +
                           "Example: 'PirateHat,Waluigi' deletes only icons whose name contains either."
@@ -155,10 +155,10 @@ public class Plugin : BaseUnityPlugin
         // [MenuCapture] END
 
         ResetUnlocks = Config.Bind(
-            section:      "Reset",
-            key:          "ResetUnlocks",
+            section: "Reset",
+            key: "ResetUnlocks",
             defaultValue: false,
-            description:  "⚠ DESTRUCTIVE ONE-SHOT TRIGGER ⚠\n" +
+            description: "⚠ DESTRUCTIVE ONE-SHOT TRIGGER ⚠\n" +
                           "\n" +
                           "Setting this to TRUE causes the NEXT game launch to:\n" +
                           "  1. Remove EVERY bridge cosmetic from your unlocks list\n" +
@@ -176,16 +176,15 @@ public class Plugin : BaseUnityPlugin
         );
 
         ShowBridgeNpe = Config.Bind(
-            section:      "Debug",
-            key:          "ShowBridgeNpe",
+            section: "Debug",
+            key: "ShowBridgeNpe",
             defaultValue: false,
-            description:  "If true, do NOT suppress NullReferenceExceptions for bridge cosmetics.\n" +
+            description: "If true, do NOT suppress NullReferenceExceptions for bridge cosmetics.\n" +
                           "Use this to diagnose bridge-only issues (will spam logs if the base game is noisy)."
         );
 
         PrintBanner();
         HhhCosmeticLoader.LoadAll();
-        IconCacheMigration.Run();        // rescue old PNGs from vanilla cache before REPOLib wipes them
         IconCacheCleaner.Run();          // honor DeleteIconCache flag if set
         _harmony.PatchAll();
 

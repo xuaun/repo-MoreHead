@@ -74,7 +74,7 @@ internal static class BatchIconGenerator
         foreach (var asset in work)
         {
             MetaManager.instance.cosmeticEquippedPreview = MetaManager.instance.cosmeticEquipped.ToList();
-            MetaManager.instance.colorsEquippedPreview   = (int[])MetaManager.instance.colorsEquipped.Clone();
+            MetaManager.instance.colorsEquippedPreview = (int[])MetaManager.instance.colorsEquipped.Clone();
             MetaManager.instance.CosmeticEquip(asset, _isPreview: true);
             MetaManager.instance.CosmeticPreviewSet(_state: true);
             MetaManager.instance.CosmeticPlayerUpdateLocal(_synced: false);
@@ -85,7 +85,7 @@ internal static class BatchIconGenerator
             yield return new WaitForEndOfFrame();
 
             if (IconCapture.TryCapture(asset, asset.type)) done++;
-            else                                            failed++;
+            else failed++;
 
             MetaManager.instance.CosmeticUnequip(asset, _isPreview: true, _save: false, _resetColor: false);
 

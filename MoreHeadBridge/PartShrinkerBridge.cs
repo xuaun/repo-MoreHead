@@ -29,10 +29,10 @@ namespace MoreHeadBridge;
 
 internal static class PartShrinkerBridge
 {
-    private static bool       _initialized;
-    private static bool       _available;
-    private static Type?      _shrinkerType;
-    private static Type?      _hiddenType;
+    private static bool _initialized;
+    private static bool _available;
+    private static Type? _shrinkerType;
+    private static Type? _hiddenType;
     private static FieldInfo? _partField;
     private static FieldInfo? _hideChildrenField;
     private static MethodInfo? _addMethod;
@@ -45,17 +45,17 @@ internal static class PartShrinkerBridge
         try
         {
             _shrinkerType = AccessTools.TypeByName("MoreHeadUtilities.PartShrinker");
-            _hiddenType   = AccessTools.TypeByName("MoreHeadUtilities.HiddenParts");
+            _hiddenType = AccessTools.TypeByName("MoreHeadUtilities.HiddenParts");
             if (_shrinkerType == null || _hiddenType == null)
             {
                 Plugin.Logger.LogDebug("[MoreHeadBridge] MoreHeadUtilities not loaded — PartShrinker bridge inactive.");
                 return;
             }
 
-            _partField         = AccessTools.Field(_shrinkerType, "partToHide");
+            _partField = AccessTools.Field(_shrinkerType, "partToHide");
             _hideChildrenField = AccessTools.Field(_shrinkerType, "hideChildren");
-            _addMethod         = AccessTools.Method(_hiddenType, "AddHiddenPart");
-            _removeMethod      = AccessTools.Method(_hiddenType, "RemoveHiddenPart");
+            _addMethod = AccessTools.Method(_hiddenType, "AddHiddenPart");
+            _removeMethod = AccessTools.Method(_hiddenType, "RemoveHiddenPart");
 
             _available = _partField != null && _hideChildrenField != null
                        && _addMethod != null && _removeMethod != null;
@@ -105,8 +105,8 @@ internal static class PartShrinkerBridge
             if (shrinker == null) continue;
             try
             {
-                object part      = _partField!.GetValue(shrinker);
-                bool hideChild   = (bool)_hideChildrenField!.GetValue(shrinker);
+                object part = _partField!.GetValue(shrinker);
+                bool hideChild = (bool)_hideChildrenField!.GetValue(shrinker);
                 // HiddenParts.AddHiddenPart(Part, bool, bool update = true) — keep the 3rd arg.
                 method.Invoke(hp, new object[] { part, hideChild, true });
 

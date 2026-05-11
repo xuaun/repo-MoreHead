@@ -28,8 +28,8 @@ internal static class ArmRotationPatch
         if (__instance == null || __instance.playerAvatarVisuals == null) return;
 
         string targetBone;
-        if      (_cosmeticAsset.type == SemiFunc.CosmeticType.ArmRight) targetBone = "ANIM ARM R SCALE";
-        else if (_cosmeticAsset.type == SemiFunc.CosmeticType.ArmLeft)  targetBone = "code_arm_l";
+        if (_cosmeticAsset.type == SemiFunc.CosmeticType.ArmRight) targetBone = "ANIM ARM R SCALE";
+        else if (_cosmeticAsset.type == SemiFunc.CosmeticType.ArmLeft) targetBone = "code_arm_l";
         else return;
 
         var bone = FindByName(__instance.playerAvatarVisuals.transform, targetBone);
@@ -39,7 +39,7 @@ internal static class ArmRotationPatch
         __result.transform.SetParent(bone, worldPositionStays: false);
         __result.transform.localPosition = sourcePrefab.transform.localPosition;
         __result.transform.localRotation = sourcePrefab.transform.localRotation;
-        __result.transform.localScale    = sourcePrefab.transform.localScale;
+        __result.transform.localScale = sourcePrefab.transform.localScale;
     }
 
     private static Transform? FindByName(Transform root, string name)

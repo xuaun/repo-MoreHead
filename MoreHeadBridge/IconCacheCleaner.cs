@@ -8,7 +8,7 @@
 //
 // Triggers on startup (before HhhCosmeticLoader runs), so the next time GetIcon is
 // called for a deleted cosmetic the regular fallback chain (texture extract →
-// placeholder) takes over and V1 can re-capture it on next hover.
+// placeholder) takes over and it can re-capture it on next hover.
 // ============================================================================
 
 using System;
@@ -50,7 +50,7 @@ internal static class IconCacheCleaner
             }
 
             int deleted = 0;
-            int kept    = 0;
+            int kept = 0;
 
             foreach (string file in Directory.GetFiles(dir, "*.png"))
             {

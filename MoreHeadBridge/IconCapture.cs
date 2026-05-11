@@ -80,11 +80,11 @@ internal static class IconCapture
 
             // Crop to the body region for this cosmetic type, then resize to OutSize.
             Rect cropNorm = GetCropRect(type);
-            int cropX = Mathf.RoundToInt(cropNorm.x      * rt.width);
-            int cropY = Mathf.RoundToInt(cropNorm.y      * rt.height);
-            int cropW = Mathf.RoundToInt(cropNorm.width  * rt.width);
+            int cropX = Mathf.RoundToInt(cropNorm.x * rt.width);
+            int cropY = Mathf.RoundToInt(cropNorm.y * rt.height);
+            int cropW = Mathf.RoundToInt(cropNorm.width * rt.width);
             int cropH = Mathf.RoundToInt(cropNorm.height * rt.height);
-            cropW = Mathf.Max(1, Mathf.Min(cropW, rt.width  - cropX));
+            cropW = Mathf.Max(1, Mathf.Min(cropW, rt.width - cropX));
             cropH = Mathf.Max(1, Mathf.Min(cropH, rt.height - cropY));
 
             var cropPixels = full.GetPixels(cropX, cropY, cropW, cropH);

@@ -18,20 +18,20 @@ internal static class HhhCosmeticLoader
 
     private static readonly Dictionary<string, SemiFunc.CosmeticType> TagToType = new()
     {
-        ["head"]     = SemiFunc.CosmeticType.Hat,
-        ["neck"]     = SemiFunc.CosmeticType.HeadBottom,
-        ["body"]     = SemiFunc.CosmeticType.BodyTop,
-        ["hip"]      = SemiFunc.CosmeticType.BodyBottom,
+        ["head"] = SemiFunc.CosmeticType.Hat,
+        ["neck"] = SemiFunc.CosmeticType.HeadBottom,
+        ["body"] = SemiFunc.CosmeticType.BodyTop,
+        ["hip"] = SemiFunc.CosmeticType.BodyBottom,
         ["rightarm"] = SemiFunc.CosmeticType.ArmRight,
-        ["leftarm"]  = SemiFunc.CosmeticType.ArmLeft,
+        ["leftarm"] = SemiFunc.CosmeticType.ArmLeft,
         ["rightleg"] = SemiFunc.CosmeticType.LegRight,
-        ["leftleg"]  = SemiFunc.CosmeticType.LegLeft,
+        ["leftleg"] = SemiFunc.CosmeticType.LegLeft,
     };
 
-    private static readonly HashSet<string> ValidTags = [..TagToType.Keys, "world"];
+    private static readonly HashSet<string> ValidTags = [.. TagToType.Keys, "world"];
 
     // Tracks names already registered to handle duplicates across mods (like MoreHead does)
-    private static readonly HashSet<string> _usedPrefabIds   = [];
+    private static readonly HashSet<string> _usedPrefabIds = [];
     private static readonly HashSet<string> _usedInternalNames = [];
 
     public static void LoadAll()
@@ -77,7 +77,7 @@ internal static class HhhCosmeticLoader
         if (worldSkipped.Count > 0)
             Plugin.Logger.LogWarning($"[MoreHeadBridge] Skipped {worldSkipped.Count} 'world' cosmetic(s) — no vanilla equivalent (run with Debug log level to see names).");
 
-        int total   = files.Length;
+        int total = files.Length;
         int skipped = total - registered - worldSkipped.Count;
 
         LogInfo($"Done — {registered}/{total} registered. " +
@@ -149,14 +149,14 @@ internal static class HhhCosmeticLoader
         string assetId = $"{BridgeIds.Prefix}{internalName.ToLowerInvariant()}";
 
         var cosmeticAsset = ScriptableObject.CreateInstance<CosmeticAsset>();
-        cosmeticAsset.name      = internalName;
+        cosmeticAsset.name = internalName;
         cosmeticAsset.assetName = prefab.name;
-        cosmeticAsset.type      = cosmeticType;
-        cosmeticAsset.prefab    = prefabRef;
-        cosmeticAsset.assetId   = assetId;
-        cosmeticAsset.rarity    = Plugin.DefaultRarity.Value;
+        cosmeticAsset.type = cosmeticType;
+        cosmeticAsset.prefab = prefabRef;
+        cosmeticAsset.assetId = assetId;
+        cosmeticAsset.rarity = Plugin.DefaultRarity.Value;
         // .hhh cosmetics don't have tintable PlayerMaterials, so disable the paint icon.
-        cosmeticAsset.tintable  = false;
+        cosmeticAsset.tintable = false;
 
         Cosmetics.RegisterCosmetic(cosmeticAsset);
 
@@ -213,12 +213,12 @@ internal static class HhhCosmeticLoader
             if (ValidTags.Contains(candidate))
             {
                 name = fileName[..lastUnderscore];
-                tag  = candidate;
+                tag = candidate;
                 return;
             }
         }
         name = fileName;
-        tag  = "head";
+        tag = "head";
     }
 
     private static string EnsureUniqueId(string baseName, HashSet<string> used)
