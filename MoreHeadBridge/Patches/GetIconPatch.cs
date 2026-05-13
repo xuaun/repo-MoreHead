@@ -40,7 +40,8 @@ internal static class GetIconPatch
 
         if (BridgeIds.IsBridgeAsset(__instance))
         {
-            if (HhhCosmeticLoader.BridgeIconTextures.TryGetValue(__instance.assetId, out var tex) && tex != null)
+            if (Plugin.UseTextureAsPlaceholder.Value &&
+                HhhCosmeticLoader.BridgeIconTextures.TryGetValue(__instance.assetId, out var tex) && tex != null)
             {
                 __result = Sprite.Create(
                     tex,

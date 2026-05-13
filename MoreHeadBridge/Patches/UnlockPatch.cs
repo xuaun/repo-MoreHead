@@ -26,7 +26,7 @@ internal static class UnlockPatch
 
         if (!Plugin.UnlockAll.Value)
         {
-            Plugin.Logger.LogDebug("[MoreHeadBridge] UnlockAll=false, skipping auto-unlock.");
+            Plugin.Logger.LogDebug("UnlockAll=false, skipping auto-unlock.");
             return;
         }
 
@@ -40,14 +40,15 @@ internal static class UnlockPatch
 
         if (MetaManager.instance == null)
         {
-            Plugin.Logger.LogWarning("[MoreHeadBridge] MetaManager.instance is null in deferred path — skipping.");
+            Plugin.Logger.LogWarning("MetaManager.instance is null in deferred path — skipping.");
             return;
         }
 
         if (_resetRequestedAtStartup && !_resetDone)
         {
             TryReset(MetaManager.instance);
-            return;
+            if (!_resetDone) return; // reset still deferred — nothing to unlock yet
+            // fall through: if UnlockAll is on, re-unlock on the same launch after wiping
         }
 
         if (Plugin.UnlockAll.Value)
@@ -70,7 +71,7 @@ internal static class UnlockPatch
         }
 
         if (added > 0)
-            Plugin.Logger.LogInfo($"[MoreHeadBridge] Auto-unlocked {added} bridge cosmetic(s) (UnlockAll=true).");
+            Plugin.Logger.LogInfo($"Auto-unlocked {added} bridge cosmetic(s) (UnlockAll=true).");
     }
 
     // Removes every bridge cosmetic from unlocks / equipped / history, then persists. We
@@ -93,7 +94,7 @@ internal static class UnlockPatch
         // Nothing registered yet → wait for OnAllBundlesLoaded.
         if (bridgeIndices.Count == 0)
         {
-            Plugin.Logger.LogDebug("[MoreHeadBridge] ResetUnlocks: no bridge cosmetics in cosmeticAssets yet, deferring.");
+            Plugin.Logger.LogDebug("ResetUnlocks: no bridge cosmetics in cosmeticAssets yet, deferring.");
             return;
         }
 
@@ -110,7 +111,7 @@ internal static class UnlockPatch
         _resetDone = true;
 
         Plugin.Logger.LogInfo(
-            $"[MoreHeadBridge] ResetUnlocks: cleared {removedUnlocks} unlock(s), " +
+            $"ResetUnlocks: cleared {removedUnlocks} unlock(s), " +
             $"{removedEquipped} equipped, {removedHistory} history entry. Flag reset to false.");
     }
 }

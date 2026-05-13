@@ -22,7 +22,7 @@ internal static class PartShrinkerSuppressor
             var t = AccessTools.TypeByName("MoreHeadUtilities.PartShrinker");
             if (t == null)
             {
-                Plugin.Logger.LogDebug("[MoreHeadBridge] MoreHeadUtilities not loaded — PartShrinker suppressor skipped.");
+                Plugin.Logger.LogDebug("MoreHeadUtilities not loaded — PartShrinker suppressor skipped.");
                 return;
             }
 
@@ -34,11 +34,11 @@ internal static class PartShrinkerSuppressor
                 BindingFlags.Static | BindingFlags.NonPublic);
 
             harmony.Patch(target, finalizer: new HarmonyMethod(finalizer));
-            Plugin.Logger.LogInfo("[MoreHeadBridge] PartShrinker.OnDisable NPE suppressor installed.");
+            Plugin.Logger.LogDebug("PartShrinker.OnDisable NPE suppressor installed.");
         }
         catch (Exception ex)
         {
-            Plugin.Logger.LogWarning($"[MoreHeadBridge] Could not install PartShrinker suppressor: {ex.Message}");
+            Plugin.Logger.LogWarning($"Could not install PartShrinker suppressor: {ex.Message}");
         }
     }
 

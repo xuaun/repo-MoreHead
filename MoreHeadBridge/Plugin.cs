@@ -1,4 +1,3 @@
-using BCE;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -22,6 +21,9 @@ public class Plugin : BaseUnityPlugin
 
     public static ConfigEntry<bool> ResetUnlocks { get; private set; } = null!;
 
+    // [MenuCapture] — use cosmetic texture as icon overlay on the placeholder.
+    public static ConfigEntry<bool> UseTextureAsPlaceholder { get; private set; } = null!;
+
     // [MenuCapture] — reactive hover capture.
     public static ConfigEntry<bool> AutoCaptureIcons { get; private set; } = null!;
 
@@ -32,7 +34,7 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<bool> DeleteIconCache { get; private set; } = null!;
     public static ConfigEntry<string> DeleteIconsMatching { get; private set; } = null!;
 
-    public static ConfigEntry<bool> HideMoreHeadUI { get; private set; } = null!;
+    public static ConfigEntry<bool> HideMoreHeadButton { get; private set; } = null!;
 
 
     // Rarity assigned to bridge cosmetics in the vanilla cosmetics shop.
@@ -40,10 +42,10 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<SemiFunc.Rarity> DefaultRarity { get; private set; } = null!;
 
     // Comma-separated list of subfolder names (under BepInEx/plugins) to scan for .hhh files.
-    // Empty = scan ALL plugin folders (default). Use this to selectively bridge only some mods.
-    public static ConfigEntry<string> IncludeFolders { get; private set; } = null!;
+    // Empty = scan ALL plugin folders (default). Use this to select only wanted folders.
+    public static ConfigEntry<string> SpecificFolders { get; private set; } = null!;
 
-    public static ConfigEntry<bool> ShowBridgeNpe { get; private set; } = null!;
+    public static ConfigEntry<bool> ShowBridgeDebugLogs { get; private set; } = null!;
 
     private readonly Harmony _harmony = new(MyPluginInfo.PLUGIN_GUID);
 
@@ -70,9 +72,9 @@ public class Plugin : BaseUnityPlugin
                           "If you want to wipe existing unlocks, see the [Reset] section below."
         );
 
-        HideMoreHeadUI = Config.Bind(
+        HideMoreHeadButton = Config.Bind(
             section: "General",
-            key: "HideMoreHeadUI",
+            key: "HideMoreHeadButton",
             defaultValue: false,
             description: "If true, removes the MoreHead button from all menus so you can use only the vanilla cosmetics UI. Requires restart."
         );
@@ -84,15 +86,24 @@ public class Plugin : BaseUnityPlugin
             description: "Rarity tier assigned to bridge cosmetics in the vanilla shop. Values: Common, Uncommon, Rare, UltraRare."
         );
 
-        IncludeFolders = Config.Bind(
+        SpecificFolders = Config.Bind(
             section: "General",
-            key: "IncludeFolders",
+            key: "SpecificFolders",
             defaultValue: "",
             description: "Comma-separated subfolder names under BepInEx/plugins to scan for .hhh files. Empty = scan all. " +
                           "Example: 'Some-MoreHeadPack,Another-CosmeticsPack'. Matching is case-insensitive and uses path contains."
         );
 
         // [MenuCapture] BEGIN — icon-from-menu config.
+        UseTextureAsPlaceholder = Config.Bind(
+            section: "Icons",
+            key: "UseTextureAsPlaceholder",
+            defaultValue: true,
+            description: "When TRUE (default) — the cosmetic's texture is used as the icon, overlaid on the placeholder background.\n" +
+                          "When FALSE — the texture is NOT applied to the placeholder; the slot keeps the plain placeholder icon\n" +
+                          "             until a captured icon (AutoCaptureIcons / GenerateAllIcons) replaces it."
+        );
+
         AutoCaptureIcons = Config.Bind(
             section: "Icons",
             key: "AutoCaptureIcons",
@@ -167,17 +178,17 @@ public class Plugin : BaseUnityPlugin
                           "  4. Rewrite the REPOLib modded save file\n" +
                           "  5. Auto-flip this flag back to FALSE so it doesn't fire again\n" +
                           "\n" +
-                          "Use this if you want to start over with locked bridge cosmetics.\n" +
-                          "Combine with [General] UnlockAll=false to keep them locked afterward;\n" +
-                          "otherwise the next launch will just re-unlock everything.\n" +
+                          "Use this if you want to start over with bridge cosmetics.\n" +
+                          "If UnlockAll=true, cosmetics are wiped and immediately re-unlocked on the same launch.\n" +
+                          "Set UnlockAll=false FIRST if you want to keep them locked after the reset.\n" +
                           "\n" +
                           "This does NOT touch vanilla cosmetics or cosmetics from other mods.\n" +
                           "This does NOT delete the .hhh files — only the unlock state."
         );
 
-        ShowBridgeNpe = Config.Bind(
+        ShowBridgeDebugLogs = Config.Bind(
             section: "Debug",
-            key: "ShowBridgeNpe",
+            key: "ShowBridgeDebugLogs",
             defaultValue: false,
             description: "If true, do NOT suppress NullReferenceExceptions for bridge cosmetics.\n" +
                           "Use this to diagnose bridge-only issues (will spam logs if the base game is noisy)."
@@ -188,10 +199,11 @@ public class Plugin : BaseUnityPlugin
         IconCacheCleaner.Run();          // honor DeleteIconCache flag if set
         _harmony.PatchAll();
 
-        if (HideMoreHeadUI.Value)
+        if (HideMoreHeadButton.Value)
             TryHideMoreHeadUI();
 
         PartShrinkerSuppressor.TryApply(_harmony);
+        ModdedRpcRetrigger.TryApply(_harmony);
     }
 
     private void TryHideMoreHeadUI()
@@ -201,7 +213,7 @@ public class Plugin : BaseUnityPlugin
             var uiType = AccessTools.TypeByName("MoreHead.MoreHeadUI");
             if (uiType == null)
             {
-                Logger.LogDebug("[MoreHeadBridge] HideMoreHeadUI=true but MoreHead is not loaded — skipping.");
+                Logger.LogDebug("HideMoreHeadButton=true but MoreHead is not loaded — skipping.");
                 return;
             }
 
@@ -213,29 +225,28 @@ public class Plugin : BaseUnityPlugin
                 BindingFlags.Static | BindingFlags.NonPublic);
 
             _harmony.Patch(initMethod, prefix: new HarmonyMethod(prefix));
-            Logger.LogInfo("[MoreHeadBridge] MoreHead UI hidden (HideMoreHeadUI=true).");
+            Logger.LogInfo("MoreHead UI hidden (HideMoreHeadButton=true).");
         }
         catch (Exception ex)
         {
-            Logger.LogWarning($"[MoreHeadBridge] Could not hide MoreHead UI: {ex.Message}");
+            Logger.LogWarning($"Could not hide MoreHead UI: {ex.Message}");
         }
     }
 
     private static void PrintBanner()
     {
-        try
+        if (BceConsole.IsAvailable)
         {
-            console.WriteLine("════════════════════════════════════════════════════════════", ConsoleColor.DarkCyan);
-            console.Write("[Info   : MoreHead Bridge] ", ConsoleColor.Cyan);
-            console.WriteLine("► MoreHead Bridge v" + MyPluginInfo.PLUGIN_VERSION + " by Xuaun", ConsoleColor.DarkCyan);
-            console.Write("[Info   : MoreHead Bridge] ", ConsoleColor.Cyan);
-            console.WriteLine("   Bridging .hhh cosmetics → vanilla REPO via REPOLib", ConsoleColor.DarkCyan);
-            console.WriteLine("════════════════════════════════════════════════════════════", ConsoleColor.DarkCyan);
+            BceConsole.WriteLine("══════════════════════════════════════════════════════════════════════════════════", ConsoleColor.DarkCyan);
+            BceConsole.Write("[Info   :  MoreHead Bridge] ", ConsoleColor.Cyan);
+            BceConsole.WriteLine("► MoreHead Bridge v" + MyPluginInfo.PLUGIN_VERSION + " by Xuaun", ConsoleColor.DarkCyan);
+            BceConsole.Write("[Info   :  MoreHead Bridge] ", ConsoleColor.Cyan);
+            BceConsole.WriteLine("  Translating .hhh cosmetics into vanilla REPO", ConsoleColor.DarkCyan);
+            BceConsole.WriteLine("══════════════════════════════════════════════════════════════════════════════════", ConsoleColor.DarkCyan);
         }
-        catch (Exception)
+        else
         {
-            // BCE not present, fall back to plain log
-            Logger.LogInfo("[MoreHeadBridge] MoreHead Bridge v" + MyPluginInfo.PLUGIN_VERSION + " by Xuaun");
+            Logger.LogInfo("MoreHead Bridge v" + MyPluginInfo.PLUGIN_VERSION + " by Xuaun");
         }
     }
 }

@@ -2,20 +2,6 @@
 // [PartShrinkerBridge] — manually triggers MoreHeadUtilities' part-hiding
 // system for bridge cosmetics.
 //
-// The problem: MoreHeadUtilities.PartShrinker.Update walks UP the transform
-// tree looking for a parent named "ANIM BOT". That works when MoreHead is the
-// one spawning cosmetics (it parents under the rig's bones). But vanilla REPO
-// cosmetics get parented under PlayerCosmetics.cosmeticParents[i].parent,
-// which (apparently) is not inside the ANIM BOT subtree — so the walk-up
-// fails and AddHiddenPart is never called. Result: the cosmetic appears, but
-// the body mesh underneath stays visible.
-//
-// The fix: after our bridge cosmetics are instantiated, we look for any
-// PartShrinker components attached and call HiddenParts.AddHiddenPart on the
-// PlayerAvatarVisuals root ourselves. We also disable the PartShrinker
-// MonoBehaviour so its own broken walk-up never runs. On unequip we mirror
-// it with HiddenParts.RemoveHiddenPart.
-//
 // Everything goes through reflection — no compile-time dependency on
 // MoreHeadUtilities. If the mod is missing, this is a no-op.
 // ============================================================================
@@ -48,7 +34,7 @@ internal static class PartShrinkerBridge
             _hiddenType = AccessTools.TypeByName("MoreHeadUtilities.HiddenParts");
             if (_shrinkerType == null || _hiddenType == null)
             {
-                Plugin.Logger.LogDebug("[MoreHeadBridge] MoreHeadUtilities not loaded — PartShrinker bridge inactive.");
+                Plugin.Logger.LogDebug("MoreHeadUtilities not loaded — PartShrinker bridge inactive.");
                 return;
             }
 
@@ -61,13 +47,13 @@ internal static class PartShrinkerBridge
                        && _addMethod != null && _removeMethod != null;
 
             if (_available)
-                Plugin.Logger.LogInfo("[MoreHeadBridge] PartShrinker bridge installed.");
+                Plugin.Logger.LogInfo("PartShrinker bridge installed.");
             else
-                Plugin.Logger.LogWarning("[MoreHeadBridge] PartShrinker types found but reflection failed — disabled.");
+                Plugin.Logger.LogWarning("PartShrinker types found but reflection failed — disabled.");
         }
         catch (Exception ex)
         {
-            Plugin.Logger.LogWarning($"[MoreHeadBridge] PartShrinker bridge init error: {ex.Message}");
+            Plugin.Logger.LogWarning($"PartShrinker bridge init error: {ex.Message}");
         }
     }
 
@@ -94,7 +80,7 @@ internal static class PartShrinkerBridge
             try { hp = avatar.gameObject.AddComponent(_hiddenType!); }
             catch (Exception ex)
             {
-                Plugin.Logger.LogDebug($"[MoreHeadBridge] Could not add HiddenParts: {ex.Message}");
+                Plugin.Logger.LogDebug($"Could not add HiddenParts: {ex.Message}");
                 return;
             }
         }
@@ -116,7 +102,7 @@ internal static class PartShrinkerBridge
             }
             catch (Exception ex)
             {
-                Plugin.Logger.LogDebug($"[MoreHeadBridge] PartShrinker {(isAdd ? "Add" : "Remove")} failed: {ex.Message}");
+                Plugin.Logger.LogDebug($"PartShrinker {(isAdd ? "Add" : "Remove")} failed: {ex.Message}");
             }
         }
     }

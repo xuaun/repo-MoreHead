@@ -29,7 +29,7 @@ internal static class IconCacheCleaner
             string dir = IconCapture.CacheDir;
             if (!Directory.Exists(dir))
             {
-                Plugin.Logger.LogInfo("[MoreHeadBridge] DeleteIconCache: no cache directory, nothing to do.");
+                Plugin.Logger.LogInfo("DeleteIconCache: no cache directory, nothing to do.");
                 ResetFlag();
                 return;
             }
@@ -70,17 +70,17 @@ internal static class IconCacheCleaner
                 try { File.Delete(file); deleted++; }
                 catch (Exception ex)
                 {
-                    Plugin.Logger.LogWarning($"[MoreHeadBridge] Failed to delete '{file}': {ex.Message}");
+                    Plugin.Logger.LogWarning($"Failed to delete '{file}': {ex.Message}");
                 }
             }
 
             Plugin.Logger.LogInfo(
-                $"[MoreHeadBridge] DeleteIconCache: removed {deleted} bridge icon(s), kept {kept}. " +
+                $"DeleteIconCache: removed {deleted} bridge icon(s), kept {kept}. " +
                 $"Filter: {(filters.Length == 0 ? "(all bridge icons)" : string.Join(",", filters))}");
         }
         catch (Exception ex)
         {
-            Plugin.Logger.LogError($"[MoreHeadBridge] DeleteIconCache failed: {ex.Message}");
+            Plugin.Logger.LogError($"DeleteIconCache failed: {ex.Message}");
         }
         finally
         {

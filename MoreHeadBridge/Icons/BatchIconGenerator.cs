@@ -61,7 +61,7 @@ internal static class BatchIconGenerator
             work.Add(asset);
         }
 
-        Plugin.Logger.LogInfo($"[MoreHeadBridge] GenerateAllIcons: {work.Count} icon(s) to generate.");
+        Plugin.Logger.LogInfo($"GenerateAllIcons: {work.Count} icon(s) to generate.");
 
         int done = 0;
         int failed = 0;
@@ -90,7 +90,7 @@ internal static class BatchIconGenerator
             MetaManager.instance.CosmeticUnequip(asset, _isPreview: true, _save: false, _resetColor: false);
 
             if ((done + failed) % LogEvery == 0)
-                Plugin.Logger.LogInfo($"[MoreHeadBridge] Batch progress: {done + failed}/{work.Count} ({done} ok, {failed} failed)");
+                Plugin.Logger.LogInfo($"Batch progress: {done + failed}/{work.Count} ({done} ok, {failed} failed)");
         }
 
         MetaManager.instance.cosmeticEquippedPreview = savedPreview;
@@ -103,7 +103,7 @@ internal static class BatchIconGenerator
         Plugin.Instance.Config.Save();
 
         Plugin.Logger.LogInfo(
-            $"[MoreHeadBridge] GenerateAllIcons done — {done} captured, {failed} failed. Flag reset to false.");
+            $"GenerateAllIcons done — {done} captured, {failed} failed. Flag reset to false.");
     }
 }
 

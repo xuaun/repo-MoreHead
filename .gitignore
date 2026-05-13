@@ -59,9 +59,12 @@ artifacts/
 .idea/
 .serena
 .claude
+.junie
 *.sln.iml
 **/bin/
 **/obj/
 
 # 针对该项目特定的忽略
-# 如果有特定的配置文件或测试文件不想包含在版本控制中，请在这里添加 
+
+# Local build paths — machine-specific, not committed
+Directory.Build.props

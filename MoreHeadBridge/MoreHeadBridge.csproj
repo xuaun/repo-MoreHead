@@ -22,7 +22,6 @@
         <RepoPath Condition="'$(RepoPath)' == ''">$(REPO_MANAGED_PATH)</RepoPath>
         <BepInExPath Condition="'$(BepInExPath)' == ''">$(BEPINEX_CORE_PATH)</BepInExPath>
         <REPOLibPath Condition="'$(REPOLibPath)' == ''">$(REPOLIB_PATH)</REPOLibPath>
-        <BCEPath Condition="'$(BCEPath)' == ''">$(BCE_PATH)</BCEPath>
         <SubPath Condition="'$(SubPath)' == ''" />
     </PropertyGroup>
 
@@ -30,7 +29,6 @@
         <Error Condition="'$(RepoPath)' == ''" Text="RepoPath is not set. Set RepoPath or REPO_MANAGED_PATH to your REPO_Data\\Managed directory." />
         <Error Condition="'$(BepInExPath)' == ''" Text="BepInExPath is not set. Set BepInExPath or BEPINEX_CORE_PATH to your BepInEx core directory." />
         <Error Condition="'$(REPOLibPath)' == ''" Text="REPOLibPath is not set. Set REPOLibPath or REPOLIB_PATH to your REPOLib directory." />
-        <Error Condition="'$(BCEPath)' == ''" Text="BCEPath is not set. Set BCEPath or BCE_PATH to your BCE directory." />
     </Target>
 
     <ItemGroup>
@@ -47,7 +45,6 @@
         <Reference Include="$(BepInExPath)BepInEx.dll" Private="false" />
         <Reference Include="$(BepInExPath)0Harmony.dll" Private="false" />
         <Reference Include="$(REPOLibPath)REPOLib.dll" Private="false" />
-        <Reference Include="$(BCEPath)BCE.dll" Private="false" />
     </ItemGroup>
 
 </Project>

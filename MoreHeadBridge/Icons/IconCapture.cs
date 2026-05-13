@@ -33,17 +33,12 @@ internal static class IconCapture
     }
 
     internal static bool HasCache(CosmeticAsset asset) => File.Exists(CachePathFor(asset));
-
-    // Finds the active scene's PlayerAvatarMenuHover (the cosmetic menu preview widget)
-    // and returns its live render texture. Returns null if the menu isn't open or
-    // the widget isn't initialized yet.
+    
     private static RenderTexture? FindActiveAvatarRT()
     {
         var avatar = UnityEngine.Object.FindObjectOfType<PlayerAvatarMenuHover>();
         if (avatar == null) return null;
-
-        // renderTextureInstance is private; Publicize=true in csproj makes it accessible.
-        // Fall back to the RawImage texture if for some reason that's null.
+        
         if (avatar.renderTextureInstance != null) return avatar.renderTextureInstance;
         var rawImage = avatar.GetComponent<RawImage>();
         return rawImage != null ? rawImage.texture as RenderTexture : null;
@@ -71,8 +66,7 @@ internal static class IconCapture
             if (rt == null) return false;
 
             Directory.CreateDirectory(CacheDir);
-
-            // Read full pixels from the menu's live RT.
+            
             RenderTexture.active = rt;
             full = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
             full.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
@@ -117,11 +111,7 @@ internal static class IconCapture
             if (scaled != null) UnityEngine.Object.Destroy(scaled);
         }
     }
-
-    // Normalized crop rectangle (0..1) into the avatar's RT, per cosmetic slot.
-    // The avatar is roughly centered, full-body. These rough rectangles zoom into
-    // the relevant body part so each icon shows the cosmetic, not a tiny dot on
-    // a full character. Tune if the framing feels off.
+    
     private static Rect GetCropRect(SemiFunc.CosmeticType type)
     {
         switch (type)
@@ -149,10 +139,6 @@ internal static class IconCapture
             case SemiFunc.CosmeticType.BodyBottomOverlay:
             case SemiFunc.CosmeticType.BodyTopOverlay:
                 return new Rect(0.18f, 0.34f, 0.64f, 0.36f);
-
-            // The avatar in the menu faces the camera, so the character's RIGHT side
-            // appears on the SCREEN's LEFT and vice-versa. The crops below are the
-            // visible (screen) regions, hence the swap relative to the asset name.
 
             // Right arm (character's right) → LEFT half of frame.
             case SemiFunc.CosmeticType.ArmRight:
@@ -202,9 +188,7 @@ internal static class IconCapture
             Plugin.Logger.LogDebug($"[MoreHeadBridge] Button refresh failed: {ex.Message}");
         }
     }
-
-    // Naive bilinear-ish resize using Unity's bilinear filtering by rendering through
-    // a temp RT. Avoids per-pixel cost of manually downsampling 1024×1024 to 128×128.
+    
     private static Texture2D ResizeBilinear(Texture2D src, int w, int h)
     {
         var tmp = RenderTexture.GetTemporary(w, h);

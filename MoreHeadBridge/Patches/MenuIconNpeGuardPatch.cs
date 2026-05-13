@@ -15,6 +15,6 @@ internal static class MenuIconNpeGuardPatch
     {
         if (__exception is not NullReferenceException) return __exception;
         if (!BridgeIds.IsBridgeAsset(__instance?.cosmeticAsset)) return __exception;
-        return Plugin.ShowBridgeNpe.Value ? __exception : null;
+        return Plugin.ShowBridgeDebugLogs.Value ? __exception : null;
     }
 }

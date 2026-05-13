@@ -1,4 +1,3 @@
-using BCE;
 using REPOLib.Modules;
 using System;
 using System.Collections.Generic;
@@ -40,7 +39,7 @@ internal static class HhhCosmeticLoader
         string[] files = Directory.GetFiles(pluginsPath, "*.hhh", SearchOption.AllDirectories);
 
         // Optional folder filter: only keep files whose path contains one of the listed subfolder names.
-        string filterRaw = Plugin.IncludeFolders.Value ?? "";
+        string filterRaw = Plugin.SpecificFolders.Value ?? "";
         if (!string.IsNullOrWhiteSpace(filterRaw))
         {
             var allowed = filterRaw.Split(',')
@@ -50,10 +49,10 @@ internal static class HhhCosmeticLoader
 
             int before = files.Length;
             files = files.Where(f => allowed.Any(a => f.IndexOf(a, StringComparison.OrdinalIgnoreCase) >= 0)).ToArray();
-            LogInfo($"IncludeFolders filter active ({string.Join(", ", allowed)}) — kept {files.Length}/{before} files.");
+            LogInfo($"SpecificFolders filter active ({string.Join(", ", allowed)}) — kept {files.Length}/{before} files.");
         }
 
-        LogInfo($"Found {files.Length} .hhh file(s). Registering with REPOLib...");
+        LogInfo($"Found {files.Length} .hhh file(s). Translating cosmetics from MoreHead to Vanilla REPO...");
 
         int registered = 0;
         List<string> worldSkipped = [];
@@ -66,7 +65,7 @@ internal static class HhhCosmeticLoader
             if (tag == "world")
             {
                 worldSkipped.Add(Path.GetFileName(file));
-                Plugin.Logger.LogDebug($"[MoreHeadBridge] Skipped (world tag): {fileName}");
+                Plugin.Logger.LogDebug($"Skipped (world tag): {fileName}");
                 continue;
             }
 
@@ -75,7 +74,7 @@ internal static class HhhCosmeticLoader
         }
 
         if (worldSkipped.Count > 0)
-            Plugin.Logger.LogWarning($"[MoreHeadBridge] Skipped {worldSkipped.Count} 'world' cosmetic(s) — no vanilla equivalent (run with Debug log level to see names).");
+            Plugin.Logger.LogWarning($"Skipped {worldSkipped.Count} 'world' cosmetic(s) — no vanilla equivalent (run with Debug log level to see names).");
 
         int total = files.Length;
         int skipped = total - registered - worldSkipped.Count;
@@ -89,7 +88,7 @@ internal static class HhhCosmeticLoader
         var info = new FileInfo(path);
         if (!info.Exists || info.Length < 1024)
         {
-            Plugin.Logger.LogWarning($"[MoreHeadBridge] Skipped (too small/missing): {Path.GetFileName(path)}");
+            Plugin.Logger.LogWarning($"Skipped (too small/missing): {Path.GetFileName(path)}");
             return false;
         }
 
@@ -102,7 +101,7 @@ internal static class HhhCosmeticLoader
         AssetBundle? bundle = AssetBundle.LoadFromFile(path);
         if (bundle == null)
         {
-            Plugin.Logger.LogError($"[MoreHeadBridge] Failed to load bundle: {fileName}");
+            Plugin.Logger.LogError($"Failed to load bundle: {fileName}");
             return false;
         }
 
@@ -117,7 +116,7 @@ internal static class HhhCosmeticLoader
 
         if (prefab == null)
         {
-            Plugin.Logger.LogError($"[MoreHeadBridge] No GameObject in bundle: {fileName}");
+            Plugin.Logger.LogError($"No GameObject in bundle: {fileName}");
             return false;
         }
 
@@ -125,13 +124,13 @@ internal static class HhhCosmeticLoader
         string basePrefabName = prefab.name;
         prefab.name = EnsureUniqueId(basePrefabName, _usedPrefabIds);
         if (prefab.name != basePrefabName)
-            Plugin.Logger.LogWarning($"[MoreHeadBridge] Duplicate prefab name '{basePrefabName}' → renamed to '{prefab.name}'");
+            Plugin.Logger.LogWarning($"Duplicate prefab name '{basePrefabName}' → renamed to '{prefab.name}'");
 
         // Deduplicate internal name used for assetId
         string baseInternal = internalName;
         internalName = EnsureUniqueId(internalName, _usedInternalNames);
         if (internalName != baseInternal)
-            Plugin.Logger.LogWarning($"[MoreHeadBridge] Duplicate internal name '{baseInternal}' → renamed to '{internalName}'");
+            Plugin.Logger.LogWarning($"Duplicate internal name '{baseInternal}' → renamed to '{internalName}'");
 
         if (!prefab.GetComponent<Cosmetic>())
         {
@@ -142,7 +141,7 @@ internal static class HhhCosmeticLoader
         PrefabRef? prefabRef = NetworkPrefabs.RegisterNetworkPrefab($"Cosmetics/{prefab.name}", prefab);
         if (prefabRef == null)
         {
-            Plugin.Logger.LogError($"[MoreHeadBridge] Failed to register network prefab: {internalName}");
+            Plugin.Logger.LogError($"Failed to register network prefab: {internalName}");
             return false;
         }
 
@@ -155,6 +154,7 @@ internal static class HhhCosmeticLoader
         cosmeticAsset.prefab = prefabRef;
         cosmeticAsset.assetId = assetId;
         cosmeticAsset.rarity = Plugin.DefaultRarity.Value;
+        cosmeticAsset.customTypeList = [];
         // .hhh cosmetics don't have tintable PlayerMaterials, so disable the paint icon.
         cosmeticAsset.tintable = false;
 
@@ -235,7 +235,9 @@ internal static class HhhCosmeticLoader
 
     private static void LogInfo(string msg)
     {
-        try { console.WriteLine($"[Info   : MoreHead Bridge] {msg}", ConsoleColor.Cyan); }
-        catch (Exception) { Plugin.Logger.LogInfo($"[MoreHeadBridge] {msg}"); }
+        if (BceConsole.IsAvailable)
+            BceConsole.WriteLine($"[Info   :  MoreHead Bridge] {msg}", ConsoleColor.Cyan);
+        else
+            Plugin.Logger.LogInfo($"{msg}");
     }
 }
